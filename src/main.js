@@ -312,8 +312,8 @@ function updateInspector() {
 function inspectorHTML() {
   const onlineList = Object.entries(onlinePlayers).map(([id, d]) => ({ id, ...d }));
   const selected   = onlinePlayers[state.selectedParticipantId];
-  const selTasks   = state.tasks.filter(t => t.participantId === state.selectedParticipantId);
-  const openCount  = selTasks.filter(t => t.status !== 'done').length;
+  const allTasks  = state.tasks;
+  const openCount = allTasks.filter(t => t.status !== 'done').length;
 
   return `
     <section class="profile-card">
@@ -351,14 +351,14 @@ function inspectorHTML() {
         <button data-modal="tasks" class="link-btn">管理する</button>
       </div>
       <div class="task-list">
-        ${selTasks.length === 0
+        ${allTasks.length === 0
           ? '<p class="empty-note">タスクなし</p>'
-          : selTasks.slice(0, 5).map(task => `
+          : allTasks.slice(0, 6).map(task => `
             <button class="task-row ${task.status}" data-task="${task.id}" data-owner="${task.participantId}"
               ${task.status === 'done' ? 'disabled' : ''}>
               <span class="check-box"></span>
               <strong>${task.title}</strong>
-              <small>期限: ${fmtDate(task.deadline)}</small>
+              <small>${dispName(task.participantId)} · ${fmtDate(task.deadline)}</small>
               <em>${task.status === 'done' ? '完了' : '進行中'}</em>
             </button>
           `).join('')
