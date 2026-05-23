@@ -12,7 +12,7 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
-  getDatabase, ref, set, push, onValue,
+  getDatabase, ref, set, push, remove, onValue,
   onChildAdded, onChildChanged, onChildRemoved,
   onDisconnect, serverTimestamp,
   query, orderByChild, startAt,
@@ -55,7 +55,11 @@ export function initRealtime({ onJoin, onMove, onLeave, onCountChange, onChatMes
 
     onChildAdded(pRef, snap => {
       if (snap.key === myId) return;
-      onJoin(snap.key, snap.val());
+      const data = snap.val();
+      // tsClientがない（旧セッション）か90秒以上更新なし → 幽霊プレイヤーとして削除
+      const age = data.tsClient ? Date.now() - data.tsClient : Infinity;
+      if (age > 600_000) { remove(snap.ref); return; }
+      onJoin(snap.key, data);
       onCountChange?.();
     });
     onChildChanged(pRef, snap => {
@@ -127,10 +131,14 @@ export function joinSession(name, avatarIdx) {
   const data = {
     name: _name, avatarIdx: _avatarIdx,
     room: 'lobby', x: 0, z: 8, yaw: 0,
-    ts: serverTimestamp(),
+    tsClient: Date.now(),
   };
   set(myRef, data);
-  onDisconnect(myRef).remove();  // ブラウザを閉じたら自動削除
+  onDisconnect(myRef).remove();
+}
+
+export function leaveSession() {
+  if (myRef) { remove(myRef); myRef = null; myId = null; }
 }
 
 export function getMyId() { return myId; }
@@ -156,6 +164,6 @@ export function broadcastMove(x, z, room, yaw) {
   set(myRef, {
     name: _name, avatarIdx: _avatarIdx,
     room, x, z, yaw,
-    ts: serverTimestamp(),
+    tsClient: Date.now(),
   });
 }

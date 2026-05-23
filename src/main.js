@@ -25,7 +25,7 @@ import {
   setVoiceActive,
   teleportToRoom,
 } from './metaverse3d.js';
-import { broadcastChat, broadcastEmote, broadcastMove, broadcastSharedState, getMyId, initRealtime, isConfigured, joinSession, listenEmotes, listenSharedState } from './realtime.js';
+import { broadcastChat, broadcastEmote, broadcastMove, broadcastSharedState, getMyId, initRealtime, isConfigured, joinSession, leaveSession, listenEmotes, listenSharedState } from './realtime.js';
 
 let state = createInitialState();
 let activeModal = null;
@@ -368,7 +368,7 @@ function inspectorHTML() {
     </section>
 
     <section class="quick-menu">
-      <button>ヘルプ</button><button>設定</button><button>退室する</button>
+      <button>ヘルプ</button><button>設定</button><button id="leave-btn">退室する</button>
     </section>
   `;
 }
@@ -392,6 +392,10 @@ function bindInspectorEvents() {
 
   document.querySelectorAll('[data-modal]').forEach(btn => {
     btn.addEventListener('click', () => openModal(btn.dataset.modal));
+  });
+
+  document.getElementById('leave-btn')?.addEventListener('click', () => {
+    if (confirm('退室しますか？')) { leaveSession(); location.reload(); }
   });
 }
 
