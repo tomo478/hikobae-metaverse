@@ -58,7 +58,7 @@ export function initRealtime({ onJoin, onMove, onLeave, onCountChange, onChatMes
       const data = snap.val();
       // tsClientがない（旧セッション）か90秒以上更新なし → 幽霊プレイヤーとして削除
       const age = data.tsClient ? Date.now() - data.tsClient : Infinity;
-      if (age > 600_000) { remove(snap.ref); return; }
+      if (age > 90_000) { remove(snap.ref); return; }
       onJoin(snap.key, data);
       onCountChange?.();
     });
