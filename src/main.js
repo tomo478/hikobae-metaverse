@@ -254,14 +254,6 @@ function updateSidebar() {
 function sidebarHTML() {
   const progress = state.roomProgress;
   return `
-    <section class="staff-card">
-      <div class="staff-avatar">山</div>
-      <div>
-        <small>サポートスタッフ</small>
-        <strong>山田 花子</strong>
-        <span>オンライン</span>
-      </div>
-    </section>
     <h2 class="nav-title">ルーム</h2>
     <nav class="room-nav">
       ${rooms.map(r => {
