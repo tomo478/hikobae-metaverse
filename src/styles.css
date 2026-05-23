@@ -378,7 +378,7 @@ button {
 
 .control-dock {
   display: grid;
-  grid-template-columns: 370px 1fr 290px;
+  grid-template-columns: 260px 1fr 220px;
   gap: 14px;
   align-items: center;
   margin: 10px;
