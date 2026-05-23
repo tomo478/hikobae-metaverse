@@ -1,7 +1,7 @@
 import {
-  addConsultationMessage,
   addEvent,
   addTask,
+  applySharedState,
   completeTask,
   createInitialState,
   deleteEvent,
@@ -25,7 +25,7 @@ import {
   setVoiceActive,
   teleportToRoom,
 } from './metaverse3d.js';
-import { broadcastChat, broadcastEmote, broadcastMove, initRealtime, isConfigured, joinSession, listenEmotes } from './realtime.js';
+import { broadcastChat, broadcastEmote, broadcastMove, broadcastSharedState, getMyId, initRealtime, isConfigured, joinSession, listenEmotes, listenSharedState } from './realtime.js';
 
 let state = createInitialState();
 let activeModal = null;
@@ -34,6 +34,8 @@ let editingId = null;
 let chatOpen = false;
 let remoteCount = 0;
 let myName = '自分';
+const onlinePlayers = {};
+let myPlayerId = null;
 
 const app = document.querySelector('#app');
 
@@ -116,9 +118,24 @@ function init() {
 
   // Realtime multiplayer
   initRealtime({
-    onJoin:        (id, data) => { addRemotePlayer(id, data);  remoteCount++; updateOnlineCount(); },
-    onMove:        (id, data) => moveRemotePlayer(id, data),
-    onLeave:       (id)       => { removeRemotePlayer(id); remoteCount = Math.max(0, remoteCount - 1); updateOnlineCount(); },
+    onJoin: (id, data) => {
+      onlinePlayers[id] = { name: data.name, avatarIdx: data.avatarIdx, room: data.room };
+      addRemotePlayer(id, data);
+      remoteCount++;
+      updateOnlineCount();
+      updateInspector();
+    },
+    onMove: (id, data) => {
+      if (onlinePlayers[id]) onlinePlayers[id].room = data.room;
+      moveRemotePlayer(id, data);
+    },
+    onLeave: (id) => {
+      delete onlinePlayers[id];
+      removeRemotePlayer(id);
+      remoteCount = Math.max(0, remoteCount - 1);
+      updateOnlineCount();
+      updateInspector();
+    },
     onCountChange: updateOnlineCount,
     onChatMessage: (roomId, author, body) => {
       state = sendChat(state, roomId, body, author);
@@ -126,6 +143,12 @@ function init() {
     },
   });
   listenEmotes((emoji, author) => floatReactionCenter(emoji, author));
+  listenSharedState((tasks, events) => {
+    state = applySharedState(state, tasks, events);
+    updateSidebar();
+    updateInspector();
+    if (activeModal) renderModalBody();
+  });
 
   bindJoinOverlay();
 
@@ -179,11 +202,17 @@ function bindJoinOverlay() {
     myName = name;
     if (isConfigured) {
       joinSession(name, joinAvatarIdx);
+      myPlayerId = getMyId();
       setInterval(() => {
         const pos = getPlayerState();
         if (pos) broadcastMove(pos.x, pos.z, state.activeRoom, pos.yaw);
       }, 100);
+    } else {
+      myPlayerId = 'local-' + Date.now();
     }
+    onlinePlayers[myPlayerId] = { name, avatarIdx: joinAvatarIdx, room: state.activeRoom };
+    state = selectParticipant(state, myPlayerId);
+    updateInspector();
     const ov = document.getElementById('join-overlay');
     ov.classList.add('fade-out');
     setTimeout(() => ov.remove(), 380);
@@ -290,64 +319,50 @@ function updateInspector() {
 }
 
 function inspectorHTML() {
-  const selectedRoom     = rooms.find(r => r.id === state.activeRoom);
-  const participantTasks = state.tasks.filter(t => t.participantId === state.selectedParticipantId);
-  const consultNotes     = state.consultations[state.selectedParticipantId] ?? [];
-  const ss               = state.supportSummary;
-  const pInfo            = participantList.find(p => p.id === state.selectedParticipantId);
+  const onlineList = Object.entries(onlinePlayers).map(([id, d]) => ({ id, ...d }));
+  const selected   = onlinePlayers[state.selectedParticipantId];
+  const selTasks   = state.tasks.filter(t => t.participantId === state.selectedParticipantId);
+  const openCount  = selTasks.filter(t => t.status !== 'done').length;
 
   return `
     <section class="profile-card">
-      <h2>参加者インスペクター</h2>
+      <h2>オンライン中 ${onlineList.length}人</h2>
       <div class="participant-tabs">
-        ${participantList.map(p => `
-          <button class="ptab ${p.id === state.selectedParticipantId ? 'active' : ''}" data-ptab="${p.id}"
-            title="${p.name}">${p.avatarLetter}</button>
-        `).join('')}
+        ${onlineList.length === 0
+          ? '<p class="empty-note" style="font-size:12px;padding:8px 0">まだ誰もいません</p>'
+          : onlineList.map(p => `
+            <button class="ptab ${p.id === state.selectedParticipantId ? 'active' : ''}"
+              data-ptab="${p.id}" title="${p.name}"
+              style="background:${AVATAR_PALETTE[(p.avatarIdx ?? 0) % AVATAR_PALETTE.length]}22;
+                     border-color:${AVATAR_PALETTE[(p.avatarIdx ?? 0) % AVATAR_PALETTE.length]}"
+            >${p.name.at(0)}</button>
+          `).join('')
+        }
       </div>
-      <div class="participant-card">
-        <div class="profile-avatar">${pInfo?.avatarLetter ?? ss.name.at(0)}</div>
-        <div>
-          <strong>${dispName(state.selectedParticipantId)} さん</strong>
-          <small>支援フェーズ: ステップ2</small>
-          <small>気分: ${ss.mood}</small>
+      ${selected ? `
+        <div class="participant-card">
+          <div class="profile-avatar"
+            style="background:${AVATAR_PALETTE[(selected.avatarIdx ?? 0) % AVATAR_PALETTE.length]};color:#fff">
+            ${selected.name.at(0)}
+          </div>
+          <div>
+            <strong>${selected.name} さん</strong>
+            <small>現在地: ${rooms.find(r => r.id === selected.room)?.label ?? 'ロビー'}</small>
+            ${selected.id === myPlayerId ? '<small style="color:var(--green)">（自分）</small>' : ''}
+          </div>
         </div>
-      </div>
-      <div class="status-line">
-        <span>ステータス</span>
-        <strong>${ss.status}（${selectedRoom.label}）</strong>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="tabs">
-        <button class="active">概要</button>
-        <button>支援記録</button>
-        <button>プロフィール</button>
-      </div>
-      <h3>学習・活動の進捗</h3>
-      <div class="activity-progress">
-        <span>参加時間</span>
-        <strong>${ss.attendanceMinutes}<small>分</small></strong>
-        <div class="progress-bar"><span style="width:${ss.progress}%"></span></div>
-        <em>${ss.progress}%</em>
-      </div>
-      <div class="streak-row">
-        <span class="streak-label">週連続参加</span>
-        <strong class="streak-num">${ss.weeklyStreak}</strong>
-        <span class="streak-unit">週</span>
-      </div>
+      ` : ''}
     </section>
 
     <section class="panel task-panel">
       <div class="panel-heading">
-        <h3>タスク（${ss.openTaskCount}件進行中）</h3>
+        <h3>タスク（${openCount}件進行中）</h3>
         <button data-modal="tasks" class="link-btn">管理する</button>
       </div>
       <div class="task-list">
-        ${participantTasks.length === 0
+        ${selTasks.length === 0
           ? '<p class="empty-note">タスクなし</p>'
-          : participantTasks.slice(0, 4).map(task => `
+          : selTasks.slice(0, 5).map(task => `
             <button class="task-row ${task.status}" data-task="${task.id}" data-owner="${task.participantId}"
               ${task.status === 'done' ? 'disabled' : ''}>
               <span class="check-box"></span>
@@ -357,32 +372,6 @@ function inspectorHTML() {
             </button>
           `).join('')
         }
-      </div>
-    </section>
-
-    <section class="panel attendance">
-      <h3>出席状況（直近2週間）</h3>
-      <strong>8 <small>/ 10日</small></strong>
-      <div class="dots">
-        ${Array.from({ length: 14 }, (_, i) =>
-          `<span class="${i < 10 && i !== 7 ? 'on' : ''}"></span>`).join('')}
-      </div>
-    </section>
-
-    <section class="panel next-support">
-      <h3>次回の支援アクション</h3>
-      <p>${ss.nextAction ?? '—'}</p>
-      <h3 style="margin-top:14px">支援メモ</h3>
-      <div class="consult-notes">
-        ${consultNotes.map(n => `
-          <div class="consult-note">
-            <span class="note-author">${n.author}</span>
-            <p>${n.body}</p>
-          </div>
-        `).join('')}
-      </div>
-      <div id="note-form-wrap">
-        <button id="add-note-btn" class="add-note-toggle">+ メモを追加</button>
       </div>
     </section>
 
@@ -396,7 +385,6 @@ function bindInspectorEvents() {
   document.querySelectorAll('[data-ptab]').forEach(btn => {
     btn.addEventListener('click', () => {
       state = selectParticipant(state, btn.dataset.ptab);
-      highlightParticipant(btn.dataset.ptab);
       updateInspector();
     });
   });
@@ -404,6 +392,7 @@ function bindInspectorEvents() {
   document.querySelectorAll('[data-task]').forEach(btn => {
     btn.addEventListener('click', () => {
       state = completeTask(state, btn.dataset.owner, btn.dataset.task);
+      syncShared();
       updateInspector();
       updateSidebar();
     });
@@ -412,34 +401,6 @@ function bindInspectorEvents() {
   document.querySelectorAll('[data-modal]').forEach(btn => {
     btn.addEventListener('click', () => openModal(btn.dataset.modal));
   });
-
-  const addNoteBtn = document.getElementById('add-note-btn');
-  if (addNoteBtn) {
-    addNoteBtn.addEventListener('click', () => {
-      const wrap = document.getElementById('note-form-wrap');
-      wrap.innerHTML = `
-        <textarea id="note-text" class="note-textarea" rows="3"
-          placeholder="支援メモを入力..."></textarea>
-        <div class="form-actions" style="margin-top:8px">
-          <button id="note-cancel" class="btn-secondary">キャンセル</button>
-          <button id="note-submit" class="btn-primary">保存</button>
-        </div>
-      `;
-      document.getElementById('note-submit').addEventListener('click', () => {
-        const text = document.getElementById('note-text').value;
-        if (!text.trim()) return;
-        state = addConsultationMessage(state, text);
-        updateInspector();
-      });
-      document.getElementById('note-cancel').addEventListener('click', () => {
-        const w = document.getElementById('note-form-wrap');
-        if (w) {
-          w.innerHTML = `<button id="add-note-btn" class="add-note-toggle">+ メモを追加</button>`;
-          bindInspectorEvents();
-        }
-      });
-    });
-  }
 }
 
 // ── Control Dock ──────────────────────────────────────────────────────────────
@@ -530,15 +491,16 @@ function renderChatMessages() {
   if (msgs.length === 0) {
     container.innerHTML = '<p class="chat-empty">まだメッセージはありません</p>';
   } else {
-    container.innerHTML = msgs.map(m => `
-      <div class="chat-bubble">
-        <div class="bubble-meta">
-          <span class="bubble-author">${m.author}</span>
+    container.innerHTML = msgs.map(m => {
+      const isMe = m.author === myName;
+      return `
+        <div class="chat-bubble ${isMe ? 'mine' : 'theirs'}">
+          ${!isMe ? `<span class="bubble-author">${m.author}</span>` : ''}
+          <p class="bubble-body">${m.body}</p>
           <span class="bubble-time">${m.time}</span>
         </div>
-        <p class="bubble-body">${m.body}</p>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
   container.scrollTop = container.scrollHeight;
 }
@@ -612,8 +574,7 @@ function bindModalEvents(body) {
   body.querySelectorAll('[data-complete-task]').forEach(btn => {
     btn.addEventListener('click', () => {
       state = completeTask(state, btn.dataset.owner, btn.dataset.completeTask);
-      updateInspector();
-      renderModalBody();
+      syncShared(); updateInspector(); renderModalBody();
     });
   });
   body.querySelectorAll('[data-edit-task]').forEach(btn => {
@@ -625,8 +586,7 @@ function bindModalEvents(body) {
     btn.addEventListener('click', () => {
       if (!confirm('このタスクを削除しますか？')) return;
       state = deleteTask(state, btn.dataset.deleteTask);
-      updateInspector();
-      renderModalBody();
+      syncShared(); updateInspector(); renderModalBody();
     });
   });
   body.querySelector('#add-task-btn')?.addEventListener('click', () => {
@@ -645,7 +605,7 @@ function bindModalEvents(body) {
       status:        document.getElementById('tf-status')?.value ?? 'todo',
     };
     state = modalMode === 'add' ? addTask(state, data) : editTask(state, editingId, data);
-    modalMode = 'list'; editingId = null;
+    syncShared(); modalMode = 'list'; editingId = null;
     updateInspector(); updateSidebar(); renderModalBody();
   });
   body.querySelector('#task-form-cancel')?.addEventListener('click', () => {
@@ -662,7 +622,7 @@ function bindModalEvents(body) {
     btn.addEventListener('click', () => {
       if (!confirm('このイベントを削除しますか？')) return;
       state = deleteEvent(state, btn.dataset.deleteEvent);
-      renderModalBody();
+      syncShared(); renderModalBody();
     });
   });
   body.querySelector('#add-event-btn')?.addEventListener('click', () => {
@@ -681,7 +641,7 @@ function bindModalEvents(body) {
       participantId: document.getElementById('ef-participant').value || null,
     };
     state = modalMode === 'add' ? addEvent(state, data) : editEvent(state, editingId, data);
-    modalMode = 'list'; editingId = null; renderModalBody();
+    syncShared(); modalMode = 'list'; editingId = null; renderModalBody();
   });
   body.querySelector('#evt-form-cancel')?.addEventListener('click', () => {
     modalMode = 'list'; editingId = null; renderModalBody();
@@ -749,8 +709,8 @@ function taskFormHTML() {
           <label for="tf-participant">担当者</label>
           <select id="tf-participant">
             <option value="team" ${!t || t.participantId === 'team' ? 'selected' : ''}>チーム全体</option>
-            ${participantList.map(p => `
-              <option value="${p.id}" ${t?.participantId === p.id ? 'selected' : ''}>${p.name}</option>
+            ${Object.entries(onlinePlayers).map(([id, d]) => `
+              <option value="${id}" ${t?.participantId === id ? 'selected' : ''}>${d.name}</option>
             `).join('')}
           </select>
         </div>
@@ -848,8 +808,8 @@ function eventFormHTML() {
           <label for="ef-participant">参加者（任意）</label>
           <select id="ef-participant">
             <option value="">なし</option>
-            ${participantList.map(p => `
-              <option value="${p.id}" ${ev?.participantId === p.id ? 'selected' : ''}>${p.name}</option>
+            ${Object.entries(onlinePlayers).map(([id, d]) => `
+              <option value="${id}" ${ev?.participantId === id ? 'selected' : ''}>${d.name}</option>
             `).join('')}
           </select>
         </div>
@@ -936,7 +896,13 @@ function roomCount(id) {
 }
 
 function dispName(id) {
-  return participantList.find(p => p.id === id)?.name ?? (id === 'team' ? 'チーム' : '参加者');
+  return onlinePlayers[id]?.name
+      ?? participantList.find(p => p.id === id)?.name
+      ?? (id === 'team' ? 'チーム' : id);
+}
+
+function syncShared() {
+  broadcastSharedState(state.tasks, state.events);
 }
 
 function fmtDate(dateStr) {

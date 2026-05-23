@@ -76,8 +76,15 @@ export function createInitialState() {
 // ── Participant ───────────────────────────────────────────────────────────────
 
 export function selectParticipant(state, participantId) {
-  if (!state.participants.some(p => p.id === participantId)) return state;
   return deriveState({ ...state, selectedParticipantId: participantId });
+}
+
+export function applySharedState(state, tasks, events) {
+  return deriveState({
+    ...state,
+    tasks:  tasks  ?? state.tasks,
+    events: events ?? state.events,
+  });
 }
 
 export function updateParticipantStatus(state, participantId, updates) {
@@ -175,7 +182,8 @@ function deriveState(state) {
 }
 
 function buildSupportSummary(state) {
-  const p  = state.participants.find(x => x.id === state.selectedParticipantId);
+  const p  = state.participants.find(x => x.id === state.selectedParticipantId)
+          ?? { id: state.selectedParticipantId, name: '参加者', mood: '—', status: 'オンライン', attendanceMinutes: 0, weeklyStreak: 0, progress: 0, nextAction: null };
   const pt = state.tasks.filter(t => t.participantId === p.id);
   return {
     name: p.name, status: p.status, mood: p.mood,

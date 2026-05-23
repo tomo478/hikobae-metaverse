@@ -12,7 +12,7 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
-  getDatabase, ref, set, push,
+  getDatabase, ref, set, push, onValue,
   onChildAdded, onChildChanged, onChildRemoved,
   onDisconnect, serverTimestamp,
   query, orderByChild, startAt,
@@ -131,6 +131,21 @@ export function joinSession(name, avatarIdx) {
   };
   set(myRef, data);
   onDisconnect(myRef).remove();  // ブラウザを閉じたら自動削除
+}
+
+export function getMyId() { return myId; }
+
+export function broadcastSharedState(tasks, events) {
+  if (!db) return;
+  set(ref(db, `rooms/${ROOM_ID}/shared`), { tasks, events });
+}
+
+export function listenSharedState(onUpdate) {
+  if (!db) return;
+  onValue(ref(db, `rooms/${ROOM_ID}/shared`), snap => {
+    const data = snap.val();
+    if (data?.tasks || data?.events) onUpdate(data.tasks ?? null, data.events ?? null);
+  });
 }
 
 export function broadcastMove(x, z, room, yaw) {
