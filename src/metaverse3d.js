@@ -69,7 +69,6 @@ export function initMetaverse(container, onParticipant, onRoom) {
   buildScene();
   buildWorld();
   buildPlayer();
-  buildNPCs();
   addHintOverlay(container);
   bindEvents(container);
   clock = new THREE.Clock();
@@ -834,6 +833,66 @@ function bindEvents(container) {
   });
 }
 
+// ── Remote players ────────────────────────────────────────────────────────────
+
+const REMOTE_COLORS = [
+  { shirt: 0x3b82f6, hair: 0x1e293b, pants: 0x1e3a5f },
+  { shirt: 0xef4444, hair: 0x7f1d1d, pants: 0x450a0a },
+  { shirt: 0x10b981, hair: 0x064e3b, pants: 0x052e16 },
+  { shirt: 0xf59e0b, hair: 0x451a03, pants: 0x422006 },
+  { shirt: 0x8b5cf6, hair: 0x2e1065, pants: 0x3b0764 },
+  { shirt: 0xec4899, hair: 0x500724, pants: 0x4a0d3b },
+];
+
+const remotePlayers = {};
+
+export function addRemotePlayer(id, data) {
+  if (remotePlayers[id]) { _setRemoteTarget(id, data); return; }
+  const c = REMOTE_COLORS[(data.avatarIdx ?? 0) % REMOTE_COLORS.length];
+  const g = buildAvatar(c.shirt, c.hair, c.pants, data.name || '?', false);
+  g.position.set(data.x ?? 0, 0, data.z ?? 0);
+  g.rotation.y = data.yaw ?? 0;
+  scene.add(g);
+  remotePlayers[id] = { group: g, tx: data.x ?? 0, tz: data.z ?? 0, tyaw: data.yaw ?? 0 };
+}
+
+export function moveRemotePlayer(id, data) {
+  if (!remotePlayers[id]) { addRemotePlayer(id, data); return; }
+  _setRemoteTarget(id, data);
+}
+
+function _setRemoteTarget(id, data) {
+  const rp = remotePlayers[id];
+  if (!rp) return;
+  if (data.x   !== undefined) rp.tx   = data.x;
+  if (data.z   !== undefined) rp.tz   = data.z;
+  if (data.yaw !== undefined) rp.tyaw = data.yaw;
+}
+
+export function removeRemotePlayer(id) {
+  const rp = remotePlayers[id];
+  if (!rp) return;
+  scene.remove(rp.group);
+  delete remotePlayers[id];
+}
+
+export function getPlayerState() {
+  if (!playerGroup) return null;
+  return { x: playerGroup.position.x, z: playerGroup.position.z, yaw: camYaw };
+}
+
+function animateRemotePlayers() {
+  const L = 0.18;
+  Object.values(remotePlayers).forEach(rp => {
+    rp.group.position.x += (rp.tx - rp.group.position.x) * L;
+    rp.group.position.z += (rp.tz - rp.group.position.z) * L;
+    let dy = rp.tyaw - rp.group.rotation.y;
+    while (dy >  Math.PI) dy -= Math.PI * 2;
+    while (dy < -Math.PI) dy += Math.PI * 2;
+    rp.group.rotation.y += dy * L;
+  });
+}
+
 // ── Animation loop ────────────────────────────────────────────────────────────
 
 function loop() {
@@ -843,6 +902,7 @@ function loop() {
   movePlayer(dt);
   animateNPCs(t);
   animateVoiceRing(t);
+  animateRemotePlayers();
   updateCamera();
   updateScreens();
   composer.render();

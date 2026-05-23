@@ -16,17 +16,23 @@ import {
   toggleVoice,
 } from './app-state.js';
 import {
+  addRemotePlayer,
+  getPlayerState,
   highlightParticipant,
   initMetaverse,
+  moveRemotePlayer,
+  removeRemotePlayer,
   setVoiceActive,
   teleportToRoom,
 } from './metaverse3d.js';
+import { broadcastMove, initRealtime, isConfigured, joinSession } from './realtime.js';
 
 let state = createInitialState();
 let activeModal = null;
 let modalMode = 'list';
 let editingId = null;
 let chatOpen = false;
+let remoteCount = 0;
 
 const app = document.querySelector('#app');
 
@@ -49,7 +55,7 @@ function init() {
       </div>
       <div class="header-stat people">
         <span>フロアにいる人</span>
-        <strong>12 <small>/ 30人</small></strong>
+        <strong id="hdr-count">-- <small>人</small></strong>
       </div>
       <button class="header-button">フロア設定</button>
     </header>
@@ -79,6 +85,22 @@ function init() {
         <div class="modal-body" id="modal-body"></div>
       </div>
     </div>
+
+    <div id="join-overlay" class="join-overlay">
+      <div class="join-card">
+        <div class="join-icon">🏢</div>
+        <h2>サポートメタバースへようこそ</h2>
+        <p>お名前を入力してアバターを選んでください。</p>
+        <input id="join-name" class="join-name-input" type="text"
+          placeholder="お名前（例: たくや）" maxlength="20" autocomplete="off">
+        <div class="join-label">アバターカラー</div>
+        <div class="avatar-colors" id="avatar-colors"></div>
+        <button id="join-btn" class="join-btn">入室する →</button>
+        <p class="join-status ${isConfigured ? 'online' : 'offline'}">
+          ${isConfigured ? '🟢 マルチプレイヤーモード' : '⚪ シングルプレイヤーモード（Firebase未設定）'}
+        </p>
+      </div>
+    </div>
   `;
 
   document.getElementById('modal-close').addEventListener('click', closeModal);
@@ -90,6 +112,16 @@ function init() {
     document.getElementById('chat-panel').classList.remove('open');
     updateControlDock();
   });
+
+  // Realtime multiplayer
+  initRealtime({
+    onJoin:        (id, data) => { addRemotePlayer(id, data);  remoteCount++; updateOnlineCount(); },
+    onMove:        (id, data) => moveRemotePlayer(id, data),
+    onLeave:       (id)       => { removeRemotePlayer(id); remoteCount = Math.max(0, remoteCount - 1); updateOnlineCount(); },
+    onCountChange: updateOnlineCount,
+  });
+
+  bindJoinOverlay();
 
   const host = document.getElementById('metaverse-host');
   initMetaverse(
@@ -114,6 +146,52 @@ function init() {
   updateInspector();
   updateControlDock();
   startClock();
+}
+
+// ── Join overlay ──────────────────────────────────────────────────────────────
+
+const AVATAR_PALETTE = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899'];
+let joinAvatarIdx = 0;
+
+function bindJoinOverlay() {
+  const colBox = document.getElementById('avatar-colors');
+  colBox.innerHTML = AVATAR_PALETTE.map((c, i) => `
+    <button class="avatar-color-btn ${i === 0 ? 'selected' : ''}"
+      data-idx="${i}" style="background:${c}" title="カラー${i+1}"></button>
+  `).join('');
+
+  colBox.querySelectorAll('.avatar-color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      colBox.querySelectorAll('.avatar-color-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      joinAvatarIdx = parseInt(btn.dataset.idx);
+    });
+  });
+
+  const doJoin = () => {
+    const name = (document.getElementById('join-name').value.trim()) || '参加者';
+    if (isConfigured) {
+      joinSession(name, joinAvatarIdx);
+      setInterval(() => {
+        const pos = getPlayerState();
+        if (pos) broadcastMove(pos.x, pos.z, state.activeRoom, pos.yaw);
+      }, 100);
+    }
+    const ov = document.getElementById('join-overlay');
+    ov.classList.add('fade-out');
+    setTimeout(() => ov.remove(), 380);
+    updateOnlineCount();
+  };
+
+  document.getElementById('join-btn').addEventListener('click', doJoin);
+  document.getElementById('join-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doJoin();
+  });
+}
+
+function updateOnlineCount() {
+  const el = document.getElementById('hdr-count');
+  if (el) el.innerHTML = `${remoteCount + 1} <small>人</small>`;
 }
 
 // ── Clock ─────────────────────────────────────────────────────────────────────
