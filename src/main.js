@@ -273,7 +273,6 @@ function sidebarHTML() {
     <nav class="support-menu">
       ${[
         ['タスクボード',       'みんなのタスクを確認', 'tasks'],
-        ['おしらせ',          '運営からのお知らせ',   'news'],
         ['イベントカレンダー', '予定・イベントを確認', 'calendar'],
         ['資料ライブラリ',     '支援資料・教材一覧',   'library'],
       ].map(([title, sub, modal]) => `
