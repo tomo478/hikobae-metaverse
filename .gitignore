@@ -1,0 +1,9 @@
+Build/
+UnitySupportSpace/
+unity/
+tests/
+docs/
+*.log
+*.png
+package.json
+node_modules/
