@@ -377,8 +377,7 @@ button {
 }
 
 .control-dock {
-  display: grid;
-  grid-template-columns: 260px 1fr 220px;
+  display: flex;
   gap: 14px;
   align-items: center;
   margin: 10px;
@@ -427,6 +426,7 @@ button {
 }
 
 .chat-dock {
+  flex: 1;
   min-width: 0;
 }
 
