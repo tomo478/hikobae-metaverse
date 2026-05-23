@@ -15,6 +15,7 @@ import {
   getDatabase, ref, set, push,
   onChildAdded, onChildChanged, onChildRemoved,
   onDisconnect, serverTimestamp,
+  query, orderByChild, startAt,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
 // ★ここを自分のFirebase設定に書き換えてください★
@@ -41,7 +42,9 @@ let _name       = '参加者';
 let _avatarIdx  = 0;
 let _lastSend   = 0;
 
-export function initRealtime({ onJoin, onMove, onLeave, onCountChange }) {
+const myMessageKeys = new Set();
+
+export function initRealtime({ onJoin, onMove, onLeave, onCountChange, onChatMessage }) {
   if (!isConfigured) return;
 
   try {
@@ -63,9 +66,53 @@ export function initRealtime({ onJoin, onMove, onLeave, onCountChange }) {
       onLeave(snap.key);
       onCountChange?.();
     });
+
+    // チャット受信
+    if (onChatMessage) {
+      const joinTs = Date.now();
+      const chatRef = ref(db, `rooms/${ROOM_ID}/chat`);
+      onChildAdded(
+        query(chatRef, orderByChild('tsClient'), startAt(joinTs)),
+        snap => {
+          if (myMessageKeys.has(snap.key)) return;
+          const { roomId, author, body } = snap.val();
+          onChatMessage(roomId, author, body);
+        },
+      );
+    }
   } catch (err) {
     console.warn('[realtime] Firebase init failed:', err.message);
   }
+}
+
+export function broadcastChat(roomId, author, body) {
+  if (!db) return;
+  const chatRef = ref(db, `rooms/${ROOM_ID}/chat`);
+  const msgRef  = push(chatRef);
+  myMessageKeys.add(msgRef.key);
+  set(msgRef, { roomId, author, body, tsClient: Date.now() });
+}
+
+export function broadcastEmote(emoji, author) {
+  if (!db) return;
+  const emoteRef = ref(db, `rooms/${ROOM_ID}/emotes`);
+  const msgRef   = push(emoteRef);
+  myMessageKeys.add(msgRef.key);
+  set(msgRef, { emoji, author, tsClient: Date.now() });
+}
+
+export function listenEmotes(onEmote) {
+  if (!db || !onEmote) return;
+  const joinTs   = Date.now();
+  const emoteRef = ref(db, `rooms/${ROOM_ID}/emotes`);
+  onChildAdded(
+    query(emoteRef, orderByChild('tsClient'), startAt(joinTs)),
+    snap => {
+      if (myMessageKeys.has(snap.key)) return;
+      const { emoji, author } = snap.val();
+      onEmote(emoji, author);
+    },
+  );
 }
 
 export function joinSession(name, avatarIdx) {

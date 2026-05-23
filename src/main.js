@@ -25,7 +25,7 @@ import {
   setVoiceActive,
   teleportToRoom,
 } from './metaverse3d.js';
-import { broadcastMove, initRealtime, isConfigured, joinSession } from './realtime.js';
+import { broadcastChat, broadcastEmote, broadcastMove, initRealtime, isConfigured, joinSession, listenEmotes } from './realtime.js';
 
 let state = createInitialState();
 let activeModal = null;
@@ -120,7 +120,12 @@ function init() {
     onMove:        (id, data) => moveRemotePlayer(id, data),
     onLeave:       (id)       => { removeRemotePlayer(id); remoteCount = Math.max(0, remoteCount - 1); updateOnlineCount(); },
     onCountChange: updateOnlineCount,
+    onChatMessage: (roomId, author, body) => {
+      state = sendChat(state, roomId, body, author);
+      if (chatOpen) renderChatMessages();
+    },
   });
+  listenEmotes((emoji, author) => floatReactionCenter(emoji, author));
 
   bindJoinOverlay();
 
@@ -496,7 +501,9 @@ function bindControlEvents() {
   const chatInput = document.getElementById('chat-quick-input');
   function doSend() {
     if (!chatInput?.value.trim()) return;
-    state = sendChat(state, state.activeRoom, chatInput.value, myName);
+    const body = chatInput.value;
+    state = sendChat(state, state.activeRoom, body, myName);
+    broadcastChat(state.activeRoom, myName, body);
     chatInput.value = '';
     if (chatOpen) renderChatMessages();
     updateControlDock();
@@ -507,7 +514,10 @@ function bindControlEvents() {
   });
 
   document.querySelectorAll('[data-reaction]').forEach(btn => {
-    btn.addEventListener('click', () => floatReaction(btn.dataset.reaction, btn));
+    btn.addEventListener('click', () => {
+      floatReaction(btn.dataset.reaction, btn);
+      broadcastEmote(btn.dataset.reaction, myName);
+    });
   });
 }
 
@@ -542,6 +552,23 @@ function floatReaction(emoji, sourceEl) {
   const rect = sourceEl.getBoundingClientRect();
   el.style.left = `${rect.left + rect.width / 2 - 20}px`;
   el.style.top  = `${rect.top}px`;
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+function floatReactionCenter(emoji, author) {
+  const el = document.createElement('div');
+  el.className = 'reaction-float reaction-float--remote';
+  el.textContent = emoji;
+  const offset = (Math.random() - 0.5) * 160;
+  el.style.left = `${window.innerWidth / 2 + offset - 20}px`;
+  el.style.top  = `${window.innerHeight * 0.6}px`;
+  if (author) {
+    const label = document.createElement('span');
+    label.className = 'reaction-label';
+    label.textContent = author;
+    el.appendChild(label);
+  }
   document.body.appendChild(el);
   el.addEventListener('animationend', () => el.remove());
 }
