@@ -265,7 +265,7 @@ function sidebarHTML() {
             <strong>${r.label}</strong>
             <small>${roomDesc(r.id)}</small>
           </div>
-          <em>${rp.total > 0 ? `${rp.completed}/${rp.total}` : roomCount(r.id)}</em>
+          <em>${rp.completed}/${rp.total}</em>
         </button>`;
       }).join('')}
     </nav>
