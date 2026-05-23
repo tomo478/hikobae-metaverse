@@ -140,9 +140,9 @@ export function deleteEvent(state, eventId) {
 
 // ── Chat ──────────────────────────────────────────────────────────────────────
 
-export function sendChat(state, roomId, body) {
+export function sendChat(state, roomId, body, author = '自分') {
   if (!body.trim()) return state;
-  const msg = { author: '山田花子', body: body.trim(), time: new Date().toLocaleTimeString('ja', { hour: '2-digit', minute: '2-digit' }) };
+  const msg = { author, body: body.trim(), time: new Date().toLocaleTimeString('ja', { hour: '2-digit', minute: '2-digit' }) };
   const prev = state.chatMessages[roomId] ?? [];
   return deriveState({ ...state, chatMessages: { ...state.chatMessages, [roomId]: [...prev, msg] } });
 }

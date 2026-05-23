@@ -33,6 +33,7 @@ let modalMode = 'list';
 let editingId = null;
 let chatOpen = false;
 let remoteCount = 0;
+let myName = '自分';
 
 const app = document.querySelector('#app');
 
@@ -170,6 +171,7 @@ function bindJoinOverlay() {
 
   const doJoin = () => {
     const name = (document.getElementById('join-name').value.trim()) || '参加者';
+    myName = name;
     if (isConfigured) {
       joinSession(name, joinAvatarIdx);
       setInterval(() => {
@@ -494,7 +496,7 @@ function bindControlEvents() {
   const chatInput = document.getElementById('chat-quick-input');
   function doSend() {
     if (!chatInput?.value.trim()) return;
-    state = sendChat(state, state.activeRoom, chatInput.value);
+    state = sendChat(state, state.activeRoom, chatInput.value, myName);
     chatInput.value = '';
     if (chatOpen) renderChatMessages();
     updateControlDock();
