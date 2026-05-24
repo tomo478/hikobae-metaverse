@@ -474,7 +474,7 @@ button {
 
 .chat-dock select,
 .chat-dock input {
-  height: 42px;
+  height: 48px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: white;
@@ -483,8 +483,8 @@ button {
 .chat-dock input {
   flex: 1;
   min-width: 0;
-  padding: 0 14px;
-  font-size: 14px;
+  padding: 0 16px;
+  font-size: 15px;
 }
 
 .chat-dock select {
@@ -496,7 +496,7 @@ button {
 .chat-dock button,
 .next-support button,
 .message-form button {
-  height: 42px;
+  height: 48px;
   border: 0;
   border-radius: 10px;
   background: var(--green);

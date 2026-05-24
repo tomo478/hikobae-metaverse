@@ -439,8 +439,6 @@ function controlDockHTML() {
         <strong>マイク</strong><small>${state.voiceEnabled ? 'ON' : 'OFF'}</small>
       </button>
       <button class="on"><strong>スピーカー</strong><small>ON</small></button>
-      <button><strong>カメラ</strong><small>OFF</small></button>
-      <button><strong>画面共有</strong><small>待機</small></button>
     </section>
     <section class="chat-dock">
       <button class="chat-hist-btn ${chatOpen ? 'on' : ''}" data-action="chat-toggle">
