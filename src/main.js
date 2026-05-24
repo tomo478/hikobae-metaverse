@@ -99,12 +99,30 @@ function init() {
           placeholder="お名前（例: たくや）" maxlength="20" autocomplete="off">
         <div class="join-label">アバターを選択</div>
         <div class="avatar-model-btns" id="avatar-model-btns">
-          <button class="avatar-model-btn selected" data-model="0">👔<br>ブルースーツ</button>
-          <button class="avatar-model-btn" data-model="1">👗<br>エレガンス</button>
-          <button class="avatar-model-btn" data-model="2">🍃<br>グリーンパーカー</button>
-          <button class="avatar-model-btn" data-model="3">🌅<br>ゴールデン</button>
-          <button class="avatar-model-btn" data-model="4">🎩<br>ノワール</button>
-          <button class="avatar-model-btn" data-model="5">🔵<br>ブルーサークル</button>
+          <button class="avatar-model-btn selected" data-model="0">
+            <img src="./assets/thumb0.png" alt="ブルースーツ">
+            <span>ブルースーツ</span>
+          </button>
+          <button class="avatar-model-btn" data-model="1">
+            <img src="./assets/thumb1.png" alt="エレガンス">
+            <span>エレガンス</span>
+          </button>
+          <button class="avatar-model-btn" data-model="2">
+            <img src="./assets/thumb2.png" alt="グリーンパーカー">
+            <span>グリーンパーカー</span>
+          </button>
+          <button class="avatar-model-btn" data-model="3">
+            <img src="./assets/thumb3.png" alt="ゴールデン">
+            <span>ゴールデン</span>
+          </button>
+          <button class="avatar-model-btn" data-model="4">
+            <img src="./assets/thumb4.png" alt="ノワール">
+            <span>ノワール</span>
+          </button>
+          <button class="avatar-model-btn" data-model="5">
+            <img src="./assets/thumb5.png" alt="ブルーサークル">
+            <span>ブルーサークル</span>
+          </button>
         </div>
         <button id="join-btn" class="join-btn">入室する →</button>
         <p class="join-status ${isConfigured ? 'online' : 'offline'}">
