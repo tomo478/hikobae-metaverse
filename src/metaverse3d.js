@@ -1024,6 +1024,8 @@ export function showChatBubble(id, text) {
   const el = document.createElement('div');
   el.className = 'chat-bubble-3d';
   el.textContent = display;
+  el.style.visibility = 'hidden';
+  requestAnimationFrame(() => { el.style.visibility = ''; });
 
   const obj = new CSS2DObject(el);
   obj.position.set(0, 2.9, 0);
