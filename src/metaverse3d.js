@@ -1040,7 +1040,6 @@ export function showChatBubble(id, text) {
     }, 400);
   }, 4000);
 }
-}
 
 export function getPlayerState() {
   if (!playerGroup) return null;
