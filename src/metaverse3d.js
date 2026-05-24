@@ -1003,6 +1003,7 @@ function _setRemoteTarget(id, data) {
 export function removeRemotePlayer(id) {
   const rp = remotePlayers[id];
   if (!rp) return;
+  rp.group.traverse(c => { if (c.isCSS2DObject) c.element?.remove(); });
   scene.remove(rp.group);
   delete remotePlayers[id];
 }
