@@ -197,6 +197,11 @@ function init() {
         state = next;
         updateSidebar();
         updateControlDock();
+        if (chatOpen) {
+          const lbl = document.getElementById('chat-room-label');
+          if (lbl) lbl.textContent = `${rooms.find(r => r.id === roomId)?.label ?? roomId} のチャット`;
+          renderChatMessages();
+        }
       }
     }
   );
