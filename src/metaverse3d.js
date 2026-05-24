@@ -1001,7 +1001,7 @@ export function removeRemotePlayer(id) {
 
 export function getPlayerState() {
   if (!playerGroup) return null;
-  return { x: playerGroup.position.x, z: playerGroup.position.z, yaw: camYaw };
+  return { x: playerGroup.position.x, z: playerGroup.position.z, yaw: playerGroup.rotation.y };
 }
 
 function animateRemotePlayers() {
