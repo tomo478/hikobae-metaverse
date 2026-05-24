@@ -434,12 +434,6 @@ function controlDockHTML() {
   const selectedRoom = rooms.find(r => r.id === state.activeRoom);
   const msgCount     = (state.chatMessages[state.activeRoom] ?? []).length;
   return `
-    <section class="voice-dock">
-      <button class="${state.voiceEnabled ? 'on' : ''}" data-action="voice">
-        <strong>マイク</strong><small>${state.voiceEnabled ? 'ON' : 'OFF'}</small>
-      </button>
-      <button class="on"><strong>スピーカー</strong><small>ON</small></button>
-    </section>
     <section class="chat-dock">
       <button class="chat-hist-btn ${chatOpen ? 'on' : ''}" data-action="chat-toggle">
         💬${msgCount > 0 ? `<span class="chat-badge">${msgCount}</span>` : ''}
@@ -458,12 +452,6 @@ function controlDockHTML() {
 }
 
 function bindControlEvents() {
-  document.querySelector('[data-action="voice"]')?.addEventListener('click', () => {
-    state = toggleVoice(state);
-    setVoiceActive(state.voiceEnabled);
-    updateControlDock();
-  });
-
   document.querySelector('[data-action="chat-toggle"]')?.addEventListener('click', () => {
     chatOpen = !chatOpen;
     const panel = document.getElementById('chat-panel');
