@@ -233,12 +233,13 @@ function updateOnlineCount() {
 // ── Clock ─────────────────────────────────────────────────────────────────────
 
 function startClock() {
+  const DOW = ['日','月','火','水','木','金','土'];
   function tick() {
     const now = new Date();
     const t = document.getElementById('hdr-time');
     const d = document.getElementById('hdr-date');
-    if (t) t.textContent = now.toLocaleTimeString('ja', { hour: '2-digit', minute: '2-digit' });
-    if (d) d.textContent = now.toLocaleDateString('ja', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+    if (t) t.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    if (d) d.textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${DOW[now.getDay()]}）`;
   }
   tick();
   setInterval(tick, 1000);

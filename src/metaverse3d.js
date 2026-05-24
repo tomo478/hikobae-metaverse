@@ -70,6 +70,7 @@ export function initMetaverse(container, onParticipant, onRoom) {
   buildRenderer(container);
   buildScene();
   buildWorld();
+  buildPlayer();
   loadAvatarGLB();
   addHintOverlay(container);
   bindEvents(container);
@@ -666,9 +667,7 @@ function buildAvatar(shirtColor, hairColor, pantsColor, name, isPlayer) {
 }
 
 function buildPlayer() {
-  playerGroup = avatarGLB
-    ? cloneAvatarGLB('自分', true)
-    : buildAvatar(0x0d9488, 0x1c1917, 0x1e293b, '自分', true);
+  playerGroup = buildAvatar(0x0d9488, 0x1c1917, 0x1e293b, '自分', true);
   playerGroup.position.set(SPAWNS.lobby.x, 0, SPAWNS.lobby.z);
   scene.add(playerGroup);
 }
@@ -864,11 +863,21 @@ function loadAvatarGLB() {
     avatarYOfs  = -box.min.y * avatarScale;
     avatarTopY  = box.max.y * avatarScale + avatarYOfs;
     avatarGLB   = gltf.scene;
-    buildPlayer();
+
+    // プリミティブアバターを GLB に差し替え
+    if (playerGroup) {
+      const pos = playerGroup.position.clone();
+      const yaw = playerGroup.rotation.y;
+      scene.remove(playerGroup);
+      playerGroup = cloneAvatarGLB('自分', true);
+      playerGroup.position.copy(pos);
+      playerGroup.rotation.y = yaw;
+      scene.add(playerGroup);
+    }
+
     _pendingRemote.splice(0).forEach(([id, data]) => addRemotePlayer(id, data));
   }, undefined, err => {
-    console.warn('[GLB] load failed, using procedural avatar:', err);
-    buildPlayer();
+    console.warn('[GLB] load failed, keeping procedural avatar:', err);
   });
 }
 
