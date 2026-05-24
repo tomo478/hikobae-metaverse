@@ -9,10 +9,10 @@ import { OutputPass }                 from 'three/addons/postprocessing/OutputPa
 // ── Room config ───────────────────────────────────────────────────────────────
 
 const ROOMS = {
-  lobby:        { label: 'ロビー',  col: 0x134e4a, glow: 0x2dd4bf, lgt: 0x5eead4, x:   0, z:  0, w: 30, d: 28 },
-  learning:     { label: '学習室',  col: 0x1e3a8a, glow: 0x60a5fa, lgt: 0x93c5fd, x:  70, z:  0, w: 30, d: 40 },
-  workshop:     { label: '作業室',  col: 0x78350f, glow: 0xf59e0b, lgt: 0xfde68a, x: -70, z:  0, w: 30, d: 40 },
-  consultation: { label: '相談室',  col: 0x881337, glow: 0xfb7185, lgt: 0xfecdd3, x:   0, z:-72, w: 30, d: 28 },
+  lobby:        { label: 'ロビー',  col: 0x134e4a, glow: 0x2dd4bf, lgt: 0x5eead4, wall: 0xd8f5f0, x:   0, z:  0, w: 30, d: 28 },
+  learning:     { label: '学習室',  col: 0x1e3a8a, glow: 0x60a5fa, lgt: 0x93c5fd, wall: 0xdceafa, x:  70, z:  0, w: 30, d: 40 },
+  workshop:     { label: '作業室',  col: 0x78350f, glow: 0xf59e0b, lgt: 0xfde68a, wall: 0xfdf0d8, x: -70, z:  0, w: 30, d: 40 },
+  consultation: { label: '相談室',  col: 0x881337, glow: 0xfb7185, lgt: 0xfecdd3, wall: 0xfde8ec, x:   0, z:-72, w: 30, d: 28 },
 };
 
 const SPAWNS = {
@@ -281,7 +281,7 @@ function buildRoomWalls(id, r) {
   const WH = 8.0, WT = 0.22;
   const doors = ROOM_DOORS[id];
 
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0xeaeff4, roughness: 0.92, metalness: 0.01 });
+  const wallMat = new THREE.MeshStandardMaterial({ color: r.wall, roughness: 0.92, metalness: 0.01 });
   const trimMat = new THREE.MeshStandardMaterial({ color: r.glow, emissive: new THREE.Color(r.glow), emissiveIntensity: 0.22, roughness: 0.5 });
 
   wallSide(r.x,      r.z - hd, r.w, WH, WT, true,  doors.n, wallMat);
