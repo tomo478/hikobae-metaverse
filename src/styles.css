@@ -367,7 +367,6 @@ button {
   white-space: nowrap;
   box-shadow: 0 4px 14px rgba(0,0,0,0.13);
   pointer-events: none;
-  animation: bubble-pop 0.18s ease;
   transition: opacity 0.35s ease;
 }
 
@@ -386,10 +385,6 @@ button {
   opacity: 0;
 }
 
-@keyframes bubble-pop {
-  from { transform: scale(0.7); opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
-}
 
 /* Avatar name labels */
 .avatar-label {

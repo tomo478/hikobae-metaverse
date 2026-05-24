@@ -1026,11 +1026,12 @@ export function showChatBubble(id, text) {
   el.className = 'chat-bubble-3d';
   el.textContent = display;
   el.style.opacity = '0';
-  el.style.animation = 'none';
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    el.style.opacity = '';
-    el.style.animation = '';
-  }));
+  el.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+  el.style.transform = 'scale(0.75)';
+  setTimeout(() => {
+    el.style.opacity = '1';
+    el.style.transform = 'scale(1)';
+  }, 50);
 
   const obj = new CSS2DObject(el);
   obj.position.set(0, 2.9, 0);
