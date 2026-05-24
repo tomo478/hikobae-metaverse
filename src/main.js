@@ -383,7 +383,7 @@ function inspectorHTML() {
               ${task.status === 'done' ? 'disabled' : ''}>
               <span class="check-box"></span>
               <strong>${task.title}</strong>
-              <small>${dispName(task.participantId)} · ${fmtDate(task.deadline)}</small>
+              <small>${rooms.find(r => r.id === task.room)?.label ?? task.room} · ${dispName(task.participantId)} · ${fmtDate(task.deadline)}</small>
               <em>${task.status === 'done' ? '完了' : '進行中'}</em>
             </button>
           `).join('')
