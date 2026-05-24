@@ -669,6 +669,7 @@ function buildAvatar(shirtColor, hairColor, pantsColor, name, isPlayer) {
 function buildPlayer() {
   playerGroup = buildAvatar(0x0d9488, 0x1c1917, 0x1e293b, '自分', true);
   playerGroup.position.set(SPAWNS.lobby.x, 0, SPAWNS.lobby.z);
+  playerGroup.visible = false; // GLBロード完了まで非表示
   scene.add(playerGroup);
 }
 
@@ -883,6 +884,7 @@ function loadAvatarGLBs() {
         playerGroup = cloneAvatarModel(playerModelIdx, '自分', true);
         playerGroup.position.copy(pos);
         playerGroup.rotation.y = yaw;
+        playerGroup.visible = true;
         scene.add(playerGroup);
       }
 

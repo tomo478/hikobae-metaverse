@@ -187,25 +187,9 @@ function init() {
 
 // ── Join overlay ──────────────────────────────────────────────────────────────
 
-const AVATAR_PALETTE = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899'];
-let joinAvatarIdx = 0;
 let joinModelIdx = 0;
 
 function bindJoinOverlay() {
-  const colBox = document.getElementById('avatar-colors');
-  colBox.innerHTML = AVATAR_PALETTE.map((c, i) => `
-    <button class="avatar-color-btn ${i === 0 ? 'selected' : ''}"
-      data-idx="${i}" style="background:${c}" title="カラー${i+1}"></button>
-  `).join('');
-
-  colBox.querySelectorAll('.avatar-color-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      colBox.querySelectorAll('.avatar-color-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      joinAvatarIdx = parseInt(btn.dataset.idx);
-    });
-  });
-
   const modelBox = document.getElementById('avatar-model-btns');
   modelBox.querySelectorAll('.avatar-model-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -220,7 +204,7 @@ function bindJoinOverlay() {
     myName = name;
     setAvatarModelIdx(joinModelIdx);
     if (isConfigured) {
-      joinSession(name, joinAvatarIdx, joinModelIdx);
+      joinSession(name, 0, joinModelIdx);
       myPlayerId = getMyId();
       setInterval(() => {
         const pos = getPlayerState();
@@ -229,7 +213,7 @@ function bindJoinOverlay() {
     } else {
       myPlayerId = 'local-' + Date.now();
     }
-    onlinePlayers[myPlayerId] = { name, avatarIdx: joinAvatarIdx, room: state.activeRoom };
+    onlinePlayers[myPlayerId] = { name, avatarIdx: 0, room: state.activeRoom };
     state = selectParticipant(state, myPlayerId);
     updateInspector();
     const ov = document.getElementById('join-overlay');
