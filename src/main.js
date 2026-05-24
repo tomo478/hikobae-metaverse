@@ -327,7 +327,11 @@ function bindSidebarEvents() {
       teleportToRoom(btn.dataset.room);
       updateSidebar();
       updateControlDock();
-      if (chatOpen) renderChatMessages();
+      if (chatOpen) {
+        const lbl = document.getElementById('chat-room-label');
+        if (lbl) lbl.textContent = `${rooms.find(r => r.id === btn.dataset.room)?.label ?? btn.dataset.room} のチャット`;
+        renderChatMessages();
+      }
     });
   });
   document.querySelectorAll('[data-modal]').forEach(btn => {
