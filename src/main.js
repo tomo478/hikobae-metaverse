@@ -94,7 +94,7 @@ function init() {
     <div id="join-overlay" class="join-overlay">
       <div class="join-card">
         <div class="join-icon">🏢</div>
-        <h2>サポートメタバースへようこそ</h2>
+        <h2>ひこばえメタバースへようこそ</h2>
         <p>お名前を入力してアバターを選んでください。</p>
         <input id="join-name" class="join-name-input" type="text"
           placeholder="お名前（例: たくや）" maxlength="20" autocomplete="off">
