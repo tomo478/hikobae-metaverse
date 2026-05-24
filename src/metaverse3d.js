@@ -51,6 +51,14 @@ let dragging = false, dragX = 0, dragY = 0, dragMoved = false;
 
 const collidables = [];           // wall / ceiling meshes for camera collision
 const camRaycaster = new THREE.Raycaster();
+const wallRaycaster = new THREE.Raycaster();
+const WALL_DIRS = [
+  new THREE.Vector3( 1, 0,  0),
+  new THREE.Vector3(-1, 0,  0),
+  new THREE.Vector3( 0, 0,  1),
+  new THREE.Vector3( 0, 0, -1),
+];
+const PLAYER_RADIUS = 0.55;
 
 const keys = { w: false, a: false, s: false, d: false };
 const raycaster = new THREE.Raycaster();
@@ -1051,6 +1059,22 @@ function movePlayer(dt) {
   const B = 105;
   playerGroup.position.x = Math.max(-B, Math.min(B, playerGroup.position.x));
   playerGroup.position.z = Math.max(-B, Math.min(B, playerGroup.position.z));
+
+  // 壁との当たり判定: 4方向にレイを飛ばし近すぎる壁から押し戻す
+  const origin = playerGroup.position.clone();
+  origin.y = 1.0;
+  WALL_DIRS.forEach(dir => {
+    wallRaycaster.set(origin, dir);
+    wallRaycaster.far = PLAYER_RADIUS + 0.1;
+    const hits = wallRaycaster.intersectObjects(collidables, false);
+    if (hits.length > 0) {
+      const push = PLAYER_RADIUS - hits[0].distance;
+      if (push > 0) {
+        playerGroup.position.x -= dir.x * push;
+        playerGroup.position.z -= dir.z * push;
+      }
+    }
+  });
 
   const px = playerGroup.position.x, pz = playerGroup.position.z;
   let nearest = 'lobby', minD = Infinity;
