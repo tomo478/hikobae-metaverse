@@ -849,8 +849,15 @@ const REMOTE_COLORS = [
 
 // ── GLB Avatar ────────────────────────────────────────────────────────────────
 
-const AVATAR_URLS = ['./assets/avatar.glb', './assets/avatar_f.glb'];
-const avatarModels  = [null, null]; // { scene, scale, yOfs, topY }
+const AVATAR_URLS = [
+  './assets/av0.glb', // ブルースーツ
+  './assets/av1.glb', // エレガンス
+  './assets/av2.glb', // グリーンパーカー
+  './assets/av3.glb', // ゴールデン
+  './assets/av4.glb', // ノワール
+  './assets/av5.glb', // ブルーサークル
+];
+const avatarModels  = [null, null, null, null, null, null]; // { scene, scale, yOfs, topY }
 let   playerModelIdx = 0;           // 選択中のモデル番号
 const _pendingRemote = [];
 

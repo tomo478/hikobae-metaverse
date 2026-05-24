@@ -99,11 +99,13 @@ function init() {
           placeholder="お名前（例: たくや）" maxlength="20" autocomplete="off">
         <div class="join-label">アバターを選択</div>
         <div class="avatar-model-btns" id="avatar-model-btns">
-          <button class="avatar-model-btn selected" data-model="0">🧑 男性</button>
-          <button class="avatar-model-btn" data-model="1">👩 女性</button>
+          <button class="avatar-model-btn selected" data-model="0">👔<br>ブルースーツ</button>
+          <button class="avatar-model-btn" data-model="1">👗<br>エレガンス</button>
+          <button class="avatar-model-btn" data-model="2">🍃<br>グリーンパーカー</button>
+          <button class="avatar-model-btn" data-model="3">🌅<br>ゴールデン</button>
+          <button class="avatar-model-btn" data-model="4">🎩<br>ノワール</button>
+          <button class="avatar-model-btn" data-model="5">🔵<br>ブルーサークル</button>
         </div>
-        <div class="join-label">アバターカラー</div>
-        <div class="avatar-colors" id="avatar-colors"></div>
         <button id="join-btn" class="join-btn">入室する →</button>
         <p class="join-status ${isConfigured ? 'online' : 'offline'}">
           ${isConfigured ? '🟢 マルチプレイヤーモード' : '⚪ シングルプレイヤーモード（Firebase未設定）'}

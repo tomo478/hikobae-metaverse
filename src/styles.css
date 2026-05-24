@@ -1120,19 +1120,20 @@ button {
 }
 
 .avatar-model-btns {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   margin-bottom: 22px;
 }
 
 .avatar-model-btn {
-  flex: 1;
-  padding: 10px 0;
+  padding: 10px 4px;
   border-radius: 10px;
   border: 2px solid var(--line);
   background: var(--surface);
   color: var(--ink);
-  font-size: 15px;
+  font-size: 13px;
+  line-height: 1.4;
   transition: border-color .15s, background .15s;
 }
 
