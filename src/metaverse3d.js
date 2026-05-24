@@ -925,7 +925,7 @@ function movePlayer(dt) {
   } else {
     playerGroup.position.y = THREE.MathUtils.lerp(playerGroup.position.y, 0, dt * 10);
   }
-  const B = 72;
+  const B = 105;
   playerGroup.position.x = Math.max(-B, Math.min(B, playerGroup.position.x));
   playerGroup.position.z = Math.max(-B, Math.min(B, playerGroup.position.z));
 
