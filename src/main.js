@@ -24,6 +24,7 @@ import {
   removeRemotePlayer,
   setAvatarModelIdx,
   setVoiceActive,
+  startAvatarLoad,
   teleportToRoom,
 } from './metaverse3d.js';
 import { broadcastChat, broadcastEmote, broadcastMove, broadcastSharedState, getMyId, initRealtime, isConfigured, joinSession, leaveSession, listenEmotes, listenSharedState } from './realtime.js';
@@ -222,6 +223,7 @@ function bindJoinOverlay() {
     const name = (document.getElementById('join-name').value.trim()) || '参加者';
     myName = name;
     setAvatarModelIdx(joinModelIdx);
+    startAvatarLoad();
     if (isConfigured) {
       joinSession(name, 0, joinModelIdx);
       myPlayerId = getMyId();

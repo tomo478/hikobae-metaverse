@@ -71,7 +71,6 @@ export function initMetaverse(container, onParticipant, onRoom) {
   buildScene();
   buildWorld();
   buildPlayer();
-  loadAvatarGLBs();
   addHintOverlay(container);
   bindEvents(container);
   clock = new THREE.Clock();
@@ -864,39 +863,79 @@ const _pendingRemote = [];
 
 export function setAvatarModelIdx(idx) { playerModelIdx = idx; }
 
-function loadAvatarGLBs() {
+let _loadingEl = null;
+
+function showLoadingOverlay() {
+  if (_loadingEl) return;
+  _loadingEl = document.createElement('div');
+  _loadingEl.className = 'av-loading';
+  _loadingEl.innerHTML = `
+    <div class="av-loading-inner">
+      <div class="av-spinner"></div>
+      <p>アバター読み込み中...</p>
+    </div>`;
+  renderer.domElement.parentElement.appendChild(_loadingEl);
+}
+
+function hideLoadingOverlay() {
+  if (!_loadingEl) return;
+  _loadingEl.classList.add('done');
+  setTimeout(() => { _loadingEl?.remove(); _loadingEl = null; }, 420);
+}
+
+export function startAvatarLoad() {
   const loader = new GLTFLoader();
-  AVATAR_URLS.forEach((url, i) => {
-    loader.load(url, gltf => {
-      const box   = new THREE.Box3().setFromObject(gltf.scene);
-      const h     = box.max.y - box.min.y;
-      const scale = 1.8 / Math.max(h, 0.01);
-      const yOfs  = -box.min.y * scale;
-      avatarModels[i] = { scene: gltf.scene, scale, yOfs, topY: box.max.y * scale + yOfs };
+  showLoadingOverlay();
 
-      // 自分が選んだモデルが読み込まれたらプリミティブアバターを差し替え
-      if (i === playerModelIdx && playerGroup) {
-        const pos = playerGroup.position.clone();
-        const yaw = playerGroup.rotation.y;
-        // 古い CSS2DObject ラベルを DOM から除去
-        playerGroup.traverse(c => { if (c.isCSS2DObject) c.element?.remove(); });
-        scene.remove(playerGroup);
-        playerGroup = cloneAvatarModel(playerModelIdx, '自分', true);
-        playerGroup.position.copy(pos);
-        playerGroup.rotation.y = yaw;
-        playerGroup.visible = true;
-        scene.add(playerGroup);
-      }
+  function processGLTF(i, gltf) {
+    const box   = new THREE.Box3().setFromObject(gltf.scene);
+    const h     = box.max.y - box.min.y;
+    const scale = 1.8 / Math.max(h, 0.01);
+    const yOfs  = -box.min.y * scale;
+    avatarModels[i] = { scene: gltf.scene, scale, yOfs, topY: box.max.y * scale + yOfs };
 
-      // 待機中のリモートプレイヤーを処理
-      _pendingRemote
-        .filter(([, d]) => (d.modelIdx ?? 0) === i)
-        .forEach(([id, data]) => {
-          _pendingRemote.splice(_pendingRemote.findIndex(x => x[0] === id), 1);
-          addRemotePlayer(id, data);
-        });
-    }, undefined, err => console.warn(`[GLB] load failed (${url}):`, err));
-  });
+    if (i === playerModelIdx && playerGroup) {
+      const pos = playerGroup.position.clone();
+      const yaw = playerGroup.rotation.y;
+      playerGroup.traverse(c => { if (c.isCSS2DObject) c.element?.remove(); });
+      scene.remove(playerGroup);
+      playerGroup = cloneAvatarModel(playerModelIdx, '自分', true);
+      playerGroup.position.copy(pos);
+      playerGroup.rotation.y = yaw;
+      playerGroup.visible = true;
+      scene.add(playerGroup);
+      hideLoadingOverlay();
+
+      // 選択モデルのロード完了後に残りをバックグラウンドで読み込む
+      AVATAR_URLS.forEach((url, j) => {
+        if (j !== playerModelIdx) {
+          loader.load(url, g => processGLTF(j, g),
+            undefined, err => console.warn(`[GLB] ${url}:`, err));
+        }
+      });
+    }
+
+    _pendingRemote
+      .filter(([, d]) => (d.modelIdx ?? 0) === i)
+      .forEach(([id, data]) => {
+        _pendingRemote.splice(_pendingRemote.findIndex(x => x[0] === id), 1);
+        addRemotePlayer(id, data);
+      });
+  }
+
+  // 選択モデルを最優先でロード
+  loader.load(
+    AVATAR_URLS[playerModelIdx],
+    gltf => processGLTF(playerModelIdx, gltf),
+    undefined,
+    err => {
+      console.warn(`[GLB] ${AVATAR_URLS[playerModelIdx]}:`, err);
+      hideLoadingOverlay();
+      AVATAR_URLS.forEach((url, j) => {
+        if (j !== playerModelIdx) loader.load(url, g => processGLTF(j, g));
+      });
+    },
+  );
 }
 
 function cloneAvatarModel(modelIdx, name, isPlayer) {

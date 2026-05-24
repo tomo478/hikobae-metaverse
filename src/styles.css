@@ -292,6 +292,48 @@ button {
   background: #edf4f5;
 }
 
+.av-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 18, 28, 0.82);
+  backdrop-filter: blur(6px);
+  transition: opacity 0.4s ease;
+}
+
+.av-loading.done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.av-loading-inner {
+  text-align: center;
+  color: #fff;
+}
+
+.av-loading-inner p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.av-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #2dd4bf;
+  border-radius: 50%;
+  animation: av-spin 0.8s linear infinite;
+  margin: 0 auto 14px;
+}
+
+@keyframes av-spin {
+  to { transform: rotate(360deg); }
+}
+
 .metaverse {
   position: relative;
   overflow: hidden;
