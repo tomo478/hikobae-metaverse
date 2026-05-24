@@ -355,6 +355,42 @@ button {
   outline: none;
 }
 
+/* Chat bubbles above avatars */
+.chat-bubble-3d {
+  background: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 14px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.13);
+  pointer-events: none;
+  animation: bubble-pop 0.18s ease;
+  transition: opacity 0.35s ease;
+}
+
+.chat-bubble-3d::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #ffffff;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.08));
+}
+
+.chat-bubble-3d.fading {
+  opacity: 0;
+}
+
+@keyframes bubble-pop {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
 /* Avatar name labels */
 .avatar-label {
   padding: 4px 11px;

@@ -24,6 +24,7 @@ import {
   removeRemotePlayer,
   setAvatarModelIdx,
   setVoiceActive,
+  showChatBubble,
   startAvatarLoad,
   teleportToRoom,
 } from './metaverse3d.js';
@@ -167,6 +168,8 @@ function init() {
     onChatMessage: (roomId, author, body) => {
       state = sendChat(state, roomId, body, author);
       if (chatOpen) renderChatMessages();
+      const rid = Object.entries(onlinePlayers).find(([, p]) => p.name === author)?.[0];
+      if (rid) showChatBubble(rid, body);
     },
   });
   listenEmotes((emoji, author) => floatReactionCenter(emoji, author));
@@ -471,6 +474,7 @@ function bindControlEvents() {
     const body = chatInput.value;
     state = sendChat(state, state.activeRoom, body, myName);
     broadcastChat(state.activeRoom, myName, body);
+    showChatBubble(null, body);
     chatInput.value = '';
     if (chatOpen) renderChatMessages();
     updateControlDock();

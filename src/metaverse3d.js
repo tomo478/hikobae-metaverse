@@ -1007,6 +1007,41 @@ export function removeRemotePlayer(id) {
   delete remotePlayers[id];
 }
 
+export function showChatBubble(id, text) {
+  const MAX = 22;
+  const display = text.length > MAX ? text.slice(0, MAX) + '…' : text;
+  const group = id === null ? playerGroup : remotePlayers[id]?.group;
+  if (!group) return;
+
+  // 既存の吹き出しを除去
+  const prev = group.userData.chatBubble;
+  if (prev) {
+    clearTimeout(group.userData.chatBubbleTimer);
+    prev.element?.remove();
+    group.remove(prev);
+  }
+
+  const el = document.createElement('div');
+  el.className = 'chat-bubble-3d';
+  el.textContent = display;
+
+  const obj = new CSS2DObject(el);
+  obj.position.set(0, 2.9, 0);
+  group.add(obj);
+  group.userData.chatBubble = obj;
+
+  group.userData.chatBubbleTimer = setTimeout(() => {
+    el.classList.add('fading');
+    setTimeout(() => {
+      obj.element?.remove();
+      group.remove(obj);
+      delete group.userData.chatBubble;
+      delete group.userData.chatBubbleTimer;
+    }, 400);
+  }, 4000);
+}
+}
+
 export function getPlayerState() {
   if (!playerGroup) return null;
   return { x: playerGroup.position.x, z: playerGroup.position.z, yaw: playerGroup.rotation.y };
