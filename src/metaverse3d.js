@@ -5,6 +5,8 @@ import { EffectComposer }             from 'three/addons/postprocessing/EffectCo
 import { RenderPass }                 from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass }            from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass }                 from 'three/addons/postprocessing/OutputPass.js';
+import { GLTFLoader }                 from 'three/addons/loaders/GLTFLoader.js';
+import { clone as skeletonClone }     from 'three/addons/utils/SkeletonUtils.js';
 
 // ── Room config ───────────────────────────────────────────────────────────────
 
@@ -68,7 +70,7 @@ export function initMetaverse(container, onParticipant, onRoom) {
   buildRenderer(container);
   buildScene();
   buildWorld();
-  buildPlayer();
+  loadAvatarGLB();
   addHintOverlay(container);
   bindEvents(container);
   clock = new THREE.Clock();
@@ -664,7 +666,9 @@ function buildAvatar(shirtColor, hairColor, pantsColor, name, isPlayer) {
 }
 
 function buildPlayer() {
-  playerGroup = buildAvatar(0x0d9488, 0x1c1917, 0x1e293b, '自分', true);
+  playerGroup = avatarGLB
+    ? cloneAvatarGLB('自分', true)
+    : buildAvatar(0x0d9488, 0x1c1917, 0x1e293b, '自分', true);
   playerGroup.position.set(SPAWNS.lobby.x, 0, SPAWNS.lobby.z);
   scene.add(playerGroup);
 }
@@ -844,12 +848,62 @@ const REMOTE_COLORS = [
   { shirt: 0xec4899, hair: 0x500724, pants: 0x4a0d3b },
 ];
 
+// ── GLB Avatar ────────────────────────────────────────────────────────────────
+
+let avatarGLB     = null;
+let avatarScale   = 1.0;
+let avatarYOfs    = 0;
+let avatarTopY    = 2.1;
+const _pendingRemote = [];
+
+function loadAvatarGLB() {
+  new GLTFLoader().load('./assets/avatar.glb', gltf => {
+    const box = new THREE.Box3().setFromObject(gltf.scene);
+    const h   = box.max.y - box.min.y;
+    avatarScale = 1.8 / Math.max(h, 0.01);
+    avatarYOfs  = -box.min.y * avatarScale;
+    avatarTopY  = box.max.y * avatarScale + avatarYOfs;
+    avatarGLB   = gltf.scene;
+    buildPlayer();
+    _pendingRemote.splice(0).forEach(([id, data]) => addRemotePlayer(id, data));
+  }, undefined, err => {
+    console.warn('[GLB] load failed, using procedural avatar:', err);
+    buildPlayer();
+  });
+}
+
+function cloneAvatarGLB(name, isPlayer) {
+  const g     = new THREE.Group();
+  const model = skeletonClone(avatarGLB);
+  model.scale.setScalar(avatarScale);
+  model.position.y = avatarYOfs;
+  model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+  g.add(model);
+
+  const div = document.createElement('div');
+  div.className = isPlayer ? 'avatar-label player-label' : 'avatar-label npc-label';
+  div.textContent = name;
+  const lbl = new CSS2DObject(div);
+  lbl.position.set(0, avatarTopY + 0.35, 0);
+  g.add(lbl);
+
+  const disc = mesh(new THREE.CircleGeometry(0.38, 20),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 }));
+  disc.rotation.x = -Math.PI / 2;
+  disc.position.y = 0.01;
+  g.add(disc);
+
+  return g;
+}
+
+// ── Remote players ────────────────────────────────────────────────────────────
+
 const remotePlayers = {};
 
 export function addRemotePlayer(id, data) {
   if (remotePlayers[id]) { _setRemoteTarget(id, data); return; }
-  const c = REMOTE_COLORS[(data.avatarIdx ?? 0) % REMOTE_COLORS.length];
-  const g = buildAvatar(c.shirt, c.hair, c.pants, data.name || '?', false);
+  if (!avatarGLB) { _pendingRemote.push([id, data]); return; }
+  const g = cloneAvatarGLB(data.name || '?', false);
   g.position.set(data.x ?? 0, 0, data.z ?? 0);
   g.rotation.y = data.yaw ?? 0;
   scene.add(g);
