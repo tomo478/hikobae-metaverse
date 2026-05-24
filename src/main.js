@@ -47,7 +47,7 @@ function init() {
       <div class="brand">
         <span class="brand-mark">♥</span>
         <div>
-          <strong>つながるサポートメタバース</strong>
+          <strong>ひこばえメタバースワールド</strong>
           <small>就労・ひきこもり支援プラットフォーム</small>
         </div>
       </div>
