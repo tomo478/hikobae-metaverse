@@ -22,6 +22,7 @@ import {
   initMetaverse,
   moveRemotePlayer,
   removeRemotePlayer,
+  setAvatarModelIdx,
   setVoiceActive,
   teleportToRoom,
 } from './metaverse3d.js';
@@ -96,6 +97,11 @@ function init() {
         <p>お名前を入力してアバターを選んでください。</p>
         <input id="join-name" class="join-name-input" type="text"
           placeholder="お名前（例: たくや）" maxlength="20" autocomplete="off">
+        <div class="join-label">アバターを選択</div>
+        <div class="avatar-model-btns" id="avatar-model-btns">
+          <button class="avatar-model-btn selected" data-model="0">🧑 男性</button>
+          <button class="avatar-model-btn" data-model="1">👩 女性</button>
+        </div>
         <div class="join-label">アバターカラー</div>
         <div class="avatar-colors" id="avatar-colors"></div>
         <button id="join-btn" class="join-btn">入室する →</button>
@@ -181,6 +187,7 @@ function init() {
 
 const AVATAR_PALETTE = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899'];
 let joinAvatarIdx = 0;
+let joinModelIdx = 0;
 
 function bindJoinOverlay() {
   const colBox = document.getElementById('avatar-colors');
@@ -197,11 +204,21 @@ function bindJoinOverlay() {
     });
   });
 
+  const modelBox = document.getElementById('avatar-model-btns');
+  modelBox.querySelectorAll('.avatar-model-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modelBox.querySelectorAll('.avatar-model-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      joinModelIdx = parseInt(btn.dataset.model);
+    });
+  });
+
   const doJoin = () => {
     const name = (document.getElementById('join-name').value.trim()) || '参加者';
     myName = name;
+    setAvatarModelIdx(joinModelIdx);
     if (isConfigured) {
-      joinSession(name, joinAvatarIdx);
+      joinSession(name, joinAvatarIdx, joinModelIdx);
       myPlayerId = getMyId();
       setInterval(() => {
         const pos = getPlayerState();

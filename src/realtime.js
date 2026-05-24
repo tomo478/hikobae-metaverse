@@ -40,6 +40,7 @@ let myId   = null;
 let myRef  = null;
 let _name       = '参加者';
 let _avatarIdx  = 0;
+let _modelIdx   = 0;
 let _lastSend   = 0;
 
 const myMessageKeys = new Set();
@@ -119,17 +120,18 @@ export function listenEmotes(onEmote) {
   );
 }
 
-export function joinSession(name, avatarIdx) {
+export function joinSession(name, avatarIdx, modelIdx) {
   if (!db) return;
   _name      = name || '参加者';
   _avatarIdx = avatarIdx ?? 0;
+  _modelIdx  = modelIdx  ?? 0;
 
   const pRef = ref(db, `rooms/${ROOM_ID}/players`);
   myId  = push(pRef).key;
   myRef = ref(db, `rooms/${ROOM_ID}/players/${myId}`);
 
   const data = {
-    name: _name, avatarIdx: _avatarIdx,
+    name: _name, avatarIdx: _avatarIdx, modelIdx: _modelIdx,
     room: 'lobby', x: 0, z: 8, yaw: 0,
     tsClient: Date.now(),
   };
@@ -162,7 +164,7 @@ export function broadcastMove(x, z, room, yaw) {
   if (now - _lastSend < 80) return;   // 最大 ~12fps に制限
   _lastSend = now;
   set(myRef, {
-    name: _name, avatarIdx: _avatarIdx,
+    name: _name, avatarIdx: _avatarIdx, modelIdx: _modelIdx,
     room, x, z, yaw,
     tsClient: Date.now(),
   });

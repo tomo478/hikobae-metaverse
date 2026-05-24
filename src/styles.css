@@ -1119,6 +1119,34 @@ button {
   transform: scale(1.08);
 }
 
+.avatar-model-btns {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.avatar-model-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 15px;
+  transition: border-color .15s, background .15s;
+}
+
+.avatar-model-btn.selected {
+  border-color: var(--green);
+  background: var(--green-soft);
+  color: var(--green-dark);
+  font-weight: 600;
+}
+
+.avatar-model-btn:hover:not(.selected) {
+  border-color: var(--green);
+}
+
 .join-btn {
   display: block;
   width: 100%;

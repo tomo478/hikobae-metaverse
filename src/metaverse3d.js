@@ -71,7 +71,7 @@ export function initMetaverse(container, onParticipant, onRoom) {
   buildScene();
   buildWorld();
   buildPlayer();
-  loadAvatarGLB();
+  loadAvatarGLBs();
   addHintOverlay(container);
   bindEvents(container);
   clock = new THREE.Clock();
@@ -849,43 +849,55 @@ const REMOTE_COLORS = [
 
 // ── GLB Avatar ────────────────────────────────────────────────────────────────
 
-let avatarGLB     = null;
-let avatarScale   = 1.0;
-let avatarYOfs    = 0;
-let avatarTopY    = 2.1;
+const AVATAR_URLS = ['./assets/avatar.glb', './assets/avatar_f.glb'];
+const avatarModels  = [null, null]; // { scene, scale, yOfs, topY }
+let   playerModelIdx = 0;           // 選択中のモデル番号
 const _pendingRemote = [];
 
-function loadAvatarGLB() {
-  new GLTFLoader().load('./assets/avatar.glb', gltf => {
-    const box = new THREE.Box3().setFromObject(gltf.scene);
-    const h   = box.max.y - box.min.y;
-    avatarScale = 1.8 / Math.max(h, 0.01);
-    avatarYOfs  = -box.min.y * avatarScale;
-    avatarTopY  = box.max.y * avatarScale + avatarYOfs;
-    avatarGLB   = gltf.scene;
+export function setAvatarModelIdx(idx) { playerModelIdx = idx; }
 
-    // プリミティブアバターを GLB に差し替え
-    if (playerGroup) {
-      const pos = playerGroup.position.clone();
-      const yaw = playerGroup.rotation.y;
-      scene.remove(playerGroup);
-      playerGroup = cloneAvatarGLB('自分', true);
-      playerGroup.position.copy(pos);
-      playerGroup.rotation.y = yaw;
-      scene.add(playerGroup);
-    }
+function loadAvatarGLBs() {
+  const loader = new GLTFLoader();
+  AVATAR_URLS.forEach((url, i) => {
+    loader.load(url, gltf => {
+      const box   = new THREE.Box3().setFromObject(gltf.scene);
+      const h     = box.max.y - box.min.y;
+      const scale = 1.8 / Math.max(h, 0.01);
+      const yOfs  = -box.min.y * scale;
+      avatarModels[i] = { scene: gltf.scene, scale, yOfs, topY: box.max.y * scale + yOfs };
 
-    _pendingRemote.splice(0).forEach(([id, data]) => addRemotePlayer(id, data));
-  }, undefined, err => {
-    console.warn('[GLB] load failed, keeping procedural avatar:', err);
+      // 自分が選んだモデルが読み込まれたらプリミティブアバターを差し替え
+      if (i === playerModelIdx && playerGroup) {
+        const pos = playerGroup.position.clone();
+        const yaw = playerGroup.rotation.y;
+        // 古い CSS2DObject ラベルを DOM から除去
+        playerGroup.traverse(c => { if (c.isCSS2DObject) c.element?.remove(); });
+        scene.remove(playerGroup);
+        playerGroup = cloneAvatarModel(playerModelIdx, '自分', true);
+        playerGroup.position.copy(pos);
+        playerGroup.rotation.y = yaw;
+        scene.add(playerGroup);
+      }
+
+      // 待機中のリモートプレイヤーを処理
+      _pendingRemote
+        .filter(([, d]) => (d.modelIdx ?? 0) === i)
+        .forEach(([id, data]) => {
+          _pendingRemote.splice(_pendingRemote.findIndex(x => x[0] === id), 1);
+          addRemotePlayer(id, data);
+        });
+    }, undefined, err => console.warn(`[GLB] load failed (${url}):`, err));
   });
 }
 
-function cloneAvatarGLB(name, isPlayer) {
+function cloneAvatarModel(modelIdx, name, isPlayer) {
+  const m = avatarModels[modelIdx];
+  if (!m) return buildAvatar(0x0d9488, 0x1c1917, 0x1e293b, name, isPlayer);
+
   const g     = new THREE.Group();
-  const model = skeletonClone(avatarGLB);
-  model.scale.setScalar(avatarScale);
-  model.position.y = avatarYOfs;
+  const model = skeletonClone(m.scene);
+  model.scale.setScalar(m.scale);
+  model.position.y = m.yOfs;
   model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
   g.add(model);
 
@@ -893,7 +905,7 @@ function cloneAvatarGLB(name, isPlayer) {
   div.className = isPlayer ? 'avatar-label player-label' : 'avatar-label npc-label';
   div.textContent = name;
   const lbl = new CSS2DObject(div);
-  lbl.position.set(0, avatarTopY + 0.35, 0);
+  lbl.position.set(0, m.topY + 0.35, 0);
   g.add(lbl);
 
   const disc = mesh(new THREE.CircleGeometry(0.38, 20),
@@ -901,7 +913,6 @@ function cloneAvatarGLB(name, isPlayer) {
   disc.rotation.x = -Math.PI / 2;
   disc.position.y = 0.01;
   g.add(disc);
-
   return g;
 }
 
@@ -911,8 +922,9 @@ const remotePlayers = {};
 
 export function addRemotePlayer(id, data) {
   if (remotePlayers[id]) { _setRemoteTarget(id, data); return; }
-  if (!avatarGLB) { _pendingRemote.push([id, data]); return; }
-  const g = cloneAvatarGLB(data.name || '?', false);
+  const mi = data.modelIdx ?? 0;
+  if (!avatarModels[mi]) { _pendingRemote.push([id, data]); return; }
+  const g = cloneAvatarModel(mi, data.name || '?', false);
   g.position.set(data.x ?? 0, 0, data.z ?? 0);
   g.rotation.y = data.yaw ?? 0;
   scene.add(g);
