@@ -762,61 +762,40 @@ button {
   border-radius: 4px;
 }
 
-.task-row.selected {
-  border-color: var(--green);
-  background: var(--green-soft);
-}
-
 .task-row.done strong {
   color: #84909a;
   text-decoration: line-through;
 }
 
-.task-detail-card {
-  position: relative;
-  margin-top: 4px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border: 1.5px solid var(--green);
-  background: var(--green-soft);
-  font-size: 13px;
+.task-detail-modal {
+  padding: 4px 0;
 }
 
-.task-detail-close {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  font-size: 16px;
-  color: var(--muted);
-  cursor: pointer;
-  line-height: 1;
-}
-
-.task-detail-close:hover {
+.task-detail-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: 20px;
   color: var(--ink);
 }
 
-.task-detail-title {
-  font-weight: 700;
+.task-detail-modal-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 16px;
+  margin-bottom: 28px;
   font-size: 14px;
-  margin-bottom: 10px;
-  padding-right: 20px;
-  line-height: 1.4;
 }
 
-.task-detail-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.task-detail-modal-meta dt {
   color: var(--muted);
-  font-size: 12px;
-  margin-bottom: 12px;
+  white-space: nowrap;
 }
 
-.task-detail-done {
-  font-size: 13px;
-  color: var(--green-dark);
-  font-weight: 600;
+.task-detail-modal-meta dd {
+  margin: 0;
+  font-weight: 500;
+  color: var(--ink);
 }
 
 .task-complete-btn {

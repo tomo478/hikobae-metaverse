@@ -392,8 +392,7 @@ function inspectorHTML() {
         ${allTasks.length === 0
           ? '<p class="empty-note">タスクなし</p>'
           : allTasks.slice(0, 6).map(task => `
-            <button class="task-row ${task.status} ${task.id === selectedTaskId ? 'selected' : ''}"
-              data-task="${task.id}" data-owner="${task.participantId}">
+            <button class="task-row ${task.status}" data-task="${task.id}" data-owner="${task.participantId}">
               <span class="check-box"></span>
               <strong>${task.title}</strong>
               <small>${rooms.find(r => r.id === task.room)?.label ?? task.room} · ${dispName(task.participantId)} · ${fmtDate(task.deadline)}</small>
@@ -401,25 +400,6 @@ function inspectorHTML() {
             </button>
           `).join('')
         }
-      </div>
-      ${(() => {
-        const t = selectedTaskId ? allTasks.find(t => t.id === selectedTaskId) : null;
-        if (!t) return '';
-        return `
-          <div class="task-detail-card">
-            <div class="task-detail-close" data-task-close>×</div>
-            <div class="task-detail-title">${t.title}</div>
-            <div class="task-detail-meta">
-              <span>📍 ${rooms.find(r => r.id === t.room)?.label ?? t.room}</span>
-              <span>👤 ${dispName(t.participantId)}</span>
-              <span>📅 ${fmtDate(t.deadline)}</span>
-            </div>
-            ${t.status === 'done'
-              ? '<div class="task-detail-done">✅ 完了済み</div>'
-              : `<button class="task-complete-btn" data-complete="${t.id}" data-owner="${t.participantId}">✓ 完了にする</button>`
-            }
-          </div>`;
-      })()}
     </section>
 
     <section class="quick-menu">
@@ -438,24 +418,9 @@ function bindInspectorEvents() {
 
   document.querySelectorAll('[data-task]').forEach(btn => {
     btn.addEventListener('click', () => {
-      selectedTaskId = selectedTaskId === btn.dataset.task ? null : btn.dataset.task;
-      updateInspector();
+      selectedTaskId = btn.dataset.task;
+      openModal('task-detail');
     });
-  });
-
-  document.querySelectorAll('[data-complete]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state = completeTask(state, btn.dataset.owner, btn.dataset.complete);
-      selectedTaskId = null;
-      syncShared();
-      updateInspector();
-      updateSidebar();
-    });
-  });
-
-  document.querySelector('[data-task-close]')?.addEventListener('click', () => {
-    selectedTaskId = null;
-    updateInspector();
   });
 
   document.querySelectorAll('[data-modal]').forEach(btn => {
@@ -589,8 +554,9 @@ function floatReactionCenter(emoji, author) {
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 const MODAL_LABELS = {
-  tasks:    'タスクボード',
-  news:     'おしらせ',
+  tasks:       'タスクボード',
+  'task-detail': 'タスク詳細',
+  news:        'おしらせ',
   calendar: 'イベントカレンダー',
   library:  '資料ライブラリ',
 };
@@ -610,6 +576,8 @@ function renderModalBody() {
   switch (activeModal) {
     case 'tasks':
       body.innerHTML = modalMode === 'list' ? taskListHTML() : taskFormHTML(); break;
+    case 'task-detail':
+      body.innerHTML = taskDetailHTML(); break;
     case 'calendar':
       body.innerHTML = modalMode === 'list' ? calendarListHTML() : eventFormHTML(); break;
     case 'news':
@@ -621,6 +589,18 @@ function renderModalBody() {
 }
 
 function bindModalEvents(body) {
+  // ── Task detail ──
+  body.querySelectorAll('[data-complete]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state = completeTask(state, btn.dataset.owner, btn.dataset.complete);
+      selectedTaskId = null;
+      syncShared();
+      updateInspector();
+      updateSidebar();
+      closeModal();
+    });
+  });
+
   // ── Task list ──
   body.querySelectorAll('[data-complete-task]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -702,6 +682,27 @@ function bindModalEvents(body) {
 function closeModal() {
   document.getElementById('modal-overlay').classList.add('hidden');
   activeModal = null; modalMode = 'list'; editingId = null;
+}
+
+// ── Modal: Task detail ────────────────────────────────────────────────────────
+
+function taskDetailHTML() {
+  const t = state.tasks.find(t => t.id === selectedTaskId);
+  if (!t) return '<p class="empty-note">タスクが見つかりません</p>';
+  return `
+    <div class="task-detail-modal">
+      <div class="task-detail-modal-title">${t.title}</div>
+      <dl class="task-detail-modal-meta">
+        <dt>📍 部屋</dt><dd>${rooms.find(r => r.id === t.room)?.label ?? t.room}</dd>
+        <dt>👤 担当者</dt><dd>${dispName(t.participantId)}</dd>
+        <dt>📅 期限</dt><dd>${fmtDate(t.deadline)}</dd>
+        <dt>📌 状態</dt><dd>${t.status === 'done' ? '✅ 完了' : '🔄 進行中'}</dd>
+      </dl>
+      ${t.status !== 'done' ? `
+        <button class="task-complete-btn" data-complete="${t.id}" data-owner="${t.participantId}">
+          ✓ 完了にする
+        </button>` : ''}
+    </div>`;
 }
 
 // ── Modal: Task board ─────────────────────────────────────────────────────────
