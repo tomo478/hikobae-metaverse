@@ -32,6 +32,7 @@ import { broadcastChat, broadcastEmote, broadcastMove, broadcastSharedState, get
 
 let state = createInitialState();
 let activeModal = null;
+let selectedTaskId = null;
 let modalMode = 'list';
 let editingId = null;
 let chatOpen = false;
@@ -391,8 +392,8 @@ function inspectorHTML() {
         ${allTasks.length === 0
           ? '<p class="empty-note">タスクなし</p>'
           : allTasks.slice(0, 6).map(task => `
-            <button class="task-row ${task.status}" data-task="${task.id}" data-owner="${task.participantId}"
-              ${task.status === 'done' ? 'disabled' : ''}>
+            <button class="task-row ${task.status} ${task.id === selectedTaskId ? 'selected' : ''}"
+              data-task="${task.id}" data-owner="${task.participantId}">
               <span class="check-box"></span>
               <strong>${task.title}</strong>
               <small>${rooms.find(r => r.id === task.room)?.label ?? task.room} · ${dispName(task.participantId)} · ${fmtDate(task.deadline)}</small>
@@ -401,6 +402,24 @@ function inspectorHTML() {
           `).join('')
         }
       </div>
+      ${(() => {
+        const t = selectedTaskId ? allTasks.find(t => t.id === selectedTaskId) : null;
+        if (!t) return '';
+        return `
+          <div class="task-detail-card">
+            <div class="task-detail-close" data-task-close>×</div>
+            <div class="task-detail-title">${t.title}</div>
+            <div class="task-detail-meta">
+              <span>📍 ${rooms.find(r => r.id === t.room)?.label ?? t.room}</span>
+              <span>👤 ${dispName(t.participantId)}</span>
+              <span>📅 ${fmtDate(t.deadline)}</span>
+            </div>
+            ${t.status === 'done'
+              ? '<div class="task-detail-done">✅ 完了済み</div>'
+              : `<button class="task-complete-btn" data-complete="${t.id}" data-owner="${t.participantId}">✓ 完了にする</button>`
+            }
+          </div>`;
+      })()}
     </section>
 
     <section class="quick-menu">
@@ -419,11 +438,24 @@ function bindInspectorEvents() {
 
   document.querySelectorAll('[data-task]').forEach(btn => {
     btn.addEventListener('click', () => {
-      state = completeTask(state, btn.dataset.owner, btn.dataset.task);
+      selectedTaskId = selectedTaskId === btn.dataset.task ? null : btn.dataset.task;
+      updateInspector();
+    });
+  });
+
+  document.querySelectorAll('[data-complete]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state = completeTask(state, btn.dataset.owner, btn.dataset.complete);
+      selectedTaskId = null;
       syncShared();
       updateInspector();
       updateSidebar();
     });
+  });
+
+  document.querySelector('[data-task-close]')?.addEventListener('click', () => {
+    selectedTaskId = null;
+    updateInspector();
   });
 
   document.querySelectorAll('[data-modal]').forEach(btn => {
