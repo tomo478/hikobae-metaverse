@@ -23,6 +23,7 @@ import {
   moveRemotePlayer,
   removeRemotePlayer,
   setAvatarModelIdx,
+  setMoveKeys,
   setVoiceActive,
   showChatBubble,
   startAvatarLoad,
@@ -42,10 +43,12 @@ const onlinePlayers = {};
 let myPlayerId = null;
 
 const app = document.querySelector('#app');
+const IS_MOBILE = window.innerWidth < 1024 || ('ontouchstart' in window && window.innerWidth < 1280);
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 function init() {
+  if (IS_MOBILE) { initMobile(); return; }
   app.innerHTML = `
     <header class="app-header">
       <div class="brand">
@@ -978,6 +981,209 @@ function esc(s) {
   return String(s)
     .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
     .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── Mobile ────────────────────────────────────────────────────────────────────
+
+function initMobile() {
+  app.className = 'mobile-app';
+  app.innerHTML = `
+    <header class="mobile-header">
+      <div class="mobile-brand">ひこばえメタバース</div>
+      <div class="mobile-stats">
+        <span id="hdr-count">-- <small>人</small></span>
+        <span id="hdr-time">--:--</span>
+      </div>
+    </header>
+
+    <div class="mobile-stage" id="mobile-stage">
+      <section class="metaverse" id="metaverse-host"></section>
+
+      <div id="join-overlay" class="join-overlay">
+        <div class="join-card">
+          <div class="join-icon">🏢</div>
+          <h2>ひこばえメタバースへようこそ</h2>
+          <p>お名前を入力してアバターを選んでください。</p>
+          <input id="join-name" class="join-name-input" type="text"
+            placeholder="お名前（例: たくや）" maxlength="20" autocomplete="off">
+          <div class="join-label">アバターを選択</div>
+          <div class="avatar-model-btns" id="avatar-model-btns">
+            <button class="avatar-model-btn selected" data-model="0"><img src="./assets/thumb0.png" alt=""><span>ブルースーツ</span></button>
+            <button class="avatar-model-btn" data-model="1"><img src="./assets/thumb1.png" alt=""><span>エレガンス</span></button>
+            <button class="avatar-model-btn" data-model="2"><img src="./assets/thumb2.png" alt=""><span>グリーンパーカー</span></button>
+            <button class="avatar-model-btn" data-model="3"><img src="./assets/thumb3.png" alt=""><span>ゴールデン</span></button>
+            <button class="avatar-model-btn" data-model="4"><img src="./assets/thumb4.png" alt=""><span>ノワール</span></button>
+            <button class="avatar-model-btn" data-model="5"><img src="./assets/thumb5.png" alt=""><span>ブルーサークル</span></button>
+          </div>
+          <button id="join-btn" class="join-btn">入室する →</button>
+          <p style="font-size:12px;color:#6d7885;margin:8px 0 0;text-align:center">
+            ${isConfigured ? '🟢 マルチプレイヤーモード' : '⚪ シングルプレイヤーモード'}
+          </p>
+        </div>
+      </div>
+
+      <div id="mobile-joystick" class="mobile-joystick">
+        <div class="joystick-base" id="joystick-base">
+          <div class="joystick-handle" id="joystick-handle"></div>
+        </div>
+      </div>
+
+      <div class="mobile-chat-area" id="mobile-chat-area">
+        <div class="mobile-chat-messages" id="mobile-chat-messages"></div>
+        <div class="mobile-chat-input-row">
+          <input id="mobile-chat-input" placeholder="メッセージ..." autocomplete="off">
+          <button id="mobile-chat-send">送信</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  initRealtime({
+    onJoin: (id, data) => {
+      onlinePlayers[id] = { name: data.name, avatarIdx: data.avatarIdx, room: data.room };
+      addRemotePlayer(id, data);
+      remoteCount++;
+      updateOnlineCount();
+    },
+    onMove: (id, data) => {
+      if (onlinePlayers[id]) onlinePlayers[id].room = data.room;
+      moveRemotePlayer(id, data);
+    },
+    onLeave: (id) => {
+      delete onlinePlayers[id];
+      removeRemotePlayer(id);
+      remoteCount = Math.max(0, remoteCount - 1);
+      updateOnlineCount();
+    },
+    onCountChange: updateOnlineCount,
+    onChatMessage: (roomId, author, body) => {
+      state = sendChat(state, roomId, body, author);
+      appendMobileChatMessage(author, body, false);
+      const rid = Object.entries(onlinePlayers).find(([, p]) => p.name === author)?.[0];
+      if (rid) showChatBubble(rid, body);
+    },
+  });
+  listenEmotes(() => {});
+  listenSharedState((tasks, events) => { state = applySharedState(state, tasks, events); });
+
+  bindMobileJoinOverlay();
+
+  const host = document.getElementById('metaverse-host');
+  initMetaverse(host, () => {}, (roomId) => {
+    const next = setRoom(state, roomId);
+    if (next !== state) { state = next; }
+  });
+
+  startClock();
+  bindMobileJoystick();
+  bindMobileChatInput();
+}
+
+function bindMobileJoinOverlay() {
+  let joinModelIdx = 0;
+  const modelBox = document.getElementById('avatar-model-btns');
+  modelBox?.querySelectorAll('.avatar-model-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modelBox.querySelectorAll('.avatar-model-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      joinModelIdx = parseInt(btn.dataset.model);
+    });
+  });
+
+  const doJoin = () => {
+    const name = (document.getElementById('join-name').value.trim()) || '参加者';
+    myName = name;
+    setAvatarModelIdx(joinModelIdx);
+    startAvatarLoad();
+    if (isConfigured) {
+      joinSession(name, 0, joinModelIdx);
+      myPlayerId = getMyId();
+      setInterval(() => {
+        const pos = getPlayerState();
+        if (pos) broadcastMove(pos.x, pos.z, state.activeRoom, pos.yaw);
+      }, 100);
+    } else {
+      myPlayerId = 'local-' + Date.now();
+    }
+    onlinePlayers[myPlayerId] = { name, avatarIdx: 0, room: state.activeRoom };
+    updateOnlineCount();
+    const ov = document.getElementById('join-overlay');
+    ov.classList.add('fade-out');
+    setTimeout(() => ov.remove(), 380);
+  };
+
+  document.getElementById('join-btn')?.addEventListener('click', doJoin);
+  document.getElementById('join-name')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doJoin();
+  });
+}
+
+function bindMobileJoystick() {
+  const base   = document.getElementById('joystick-base');
+  const handle = document.getElementById('joystick-handle');
+  if (!base || !handle) return;
+
+  const R = 44;
+  let active = false, touchId = null, bx = 0, by = 0;
+
+  base.addEventListener('touchstart', e => {
+    e.stopPropagation();
+    if (active) return;
+    const t = e.changedTouches[0];
+    touchId = t.identifier;
+    active = true;
+    const rect = base.getBoundingClientRect();
+    bx = rect.left + rect.width  / 2;
+    by = rect.top  + rect.height / 2;
+  }, { passive: true });
+
+  window.addEventListener('touchmove', e => {
+    if (!active) return;
+    const t = Array.from(e.touches).find(t => t.identifier === touchId);
+    if (!t) return;
+    const dx = t.clientX - bx, dy = t.clientY - by;
+    const dist = Math.min(Math.hypot(dx, dy), R);
+    const ang  = Math.atan2(dy, dx);
+    handle.style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
+    const thr = R * 0.25;
+    setMoveKeys(dy < -thr, dx < -thr, dy > thr, dx > thr);
+  }, { passive: true });
+
+  window.addEventListener('touchend', e => {
+    const released = Array.from(e.changedTouches).find(t => t.identifier === touchId);
+    if (!released) return;
+    active = false; touchId = null;
+    handle.style.transform = 'translate(0,0)';
+    setMoveKeys(false, false, false, false);
+  });
+}
+
+function appendMobileChatMessage(author, body, isMine) {
+  const el = document.getElementById('mobile-chat-messages');
+  if (!el) return;
+  const div = document.createElement('div');
+  div.className = `mobile-msg ${isMine ? 'mine' : 'theirs'}`;
+  div.innerHTML = `<span class="mobile-msg-name">${author}</span><span class="mobile-msg-body">${body}</span>`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function bindMobileChatInput() {
+  const input = document.getElementById('mobile-chat-input');
+  const send  = document.getElementById('mobile-chat-send');
+  if (!input || !send) return;
+
+  const doSend = () => {
+    if (!input.value.trim()) return;
+    const body = input.value.trim();
+    state = sendChat(state, state.activeRoom, body, myName);
+    broadcastChat(state.activeRoom, myName, body);
+    showChatBubble(null, body);
+    appendMobileChatMessage(myName, body, true);
+    input.value = '';
+  };
+  send.addEventListener('click', doSend);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') doSend(); });
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────

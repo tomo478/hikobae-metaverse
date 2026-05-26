@@ -827,6 +827,24 @@ function bindEvents(container) {
   });
   window.addEventListener('mouseup', () => { dragging = false; });
 
+  // タッチカメラ操作
+  container.addEventListener('touchstart', e => {
+    if (e.target.closest('#mobile-joystick')) return;
+    if (e.touches.length !== 1) return;
+    dragging = true; dragMoved = false;
+    dragX = e.touches[0].clientX; dragY = e.touches[0].clientY;
+  }, { passive: true });
+  container.addEventListener('touchmove', e => {
+    if (!dragging || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - dragX;
+    const dy = e.touches[0].clientY - dragY;
+    if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved = true;
+    camYaw   -= dx * 0.006;
+    camPitch  = Math.max(0.1, Math.min(1.2, camPitch + dy * 0.004));
+    dragX = e.touches[0].clientX; dragY = e.touches[0].clientY;
+  }, { passive: true });
+  container.addEventListener('touchend', () => { dragging = false; });
+
   container.addEventListener('click', e => {
     if (dragMoved) return;
     const rect = container.getBoundingClientRect();
@@ -867,6 +885,10 @@ let   playerModelIdx = 0;           // 選択中のモデル番号
 const _pendingRemote = [];
 
 export function setAvatarModelIdx(idx) { playerModelIdx = idx; }
+
+export function setMoveKeys(w, a, s, d) {
+  keys.w = w; keys.a = a; keys.s = s; keys.d = d;
+}
 
 let _loadingEl = null;
 

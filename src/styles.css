@@ -1873,3 +1873,191 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+/* ══ Mobile layout ════════════════════════════════════════════════════════════ */
+
+.mobile-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #0a1218;
+}
+
+.mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(10,18,28,0.92);
+  color: #fff;
+  font-size: 14px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.mobile-brand {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.mobile-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.mobile-stage {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+.mobile-stage .metaverse {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Joystick ── */
+
+.mobile-joystick {
+  position: absolute;
+  bottom: 110px;
+  left: 20px;
+  z-index: 20;
+  touch-action: none;
+}
+
+.joystick-base {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+
+.joystick-handle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  border: 2px solid rgba(255,255,255,0.8);
+  transition: transform 0s;
+  touch-action: none;
+}
+
+/* ── Mobile chat ── */
+
+.mobile-chat-area {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10,18,28,0.82);
+  backdrop-filter: blur(8px);
+  padding: 8px 12px 12px;
+  gap: 6px;
+  max-height: 40vh;
+}
+
+.mobile-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 60px;
+  max-height: 120px;
+}
+
+.mobile-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+  gap: 2px;
+}
+
+.mobile-msg.mine { align-self: flex-end; align-items: flex-end; }
+.mobile-msg.theirs { align-self: flex-start; align-items: flex-start; }
+
+.mobile-msg-name {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+}
+
+.mobile-msg-body {
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.mobile-msg.mine .mobile-msg-body {
+  background: #10b981;
+  color: #fff;
+  border-bottom-right-radius: 3px;
+}
+
+.mobile-msg.theirs .mobile-msg-body {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-bottom-left-radius: 3px;
+}
+
+.mobile-chat-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.mobile-chat-input-row input {
+  flex: 1;
+  height: 44px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.mobile-chat-input-row input::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+
+.mobile-chat-input-row button {
+  height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--green);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* モバイル版 join-card の調整 */
+.mobile-app .join-card {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px 20px 20px;
+}
+
+.mobile-app .avatar-model-btn img {
+  width: 60px;
+  height: 60px;
+}
+
+.mobile-app .join-btn {
+  margin-top: 4px;
+}
