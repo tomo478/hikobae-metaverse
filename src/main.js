@@ -989,12 +989,32 @@ function initMobile() {
   app.className = 'mobile-app';
   app.innerHTML = `
     <header class="mobile-header">
+      <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
       <div class="mobile-brand">ひこばえメタバース</div>
       <div class="mobile-stats">
         <span id="hdr-count">-- <small>人</small></span>
         <span id="hdr-time">--:--</span>
       </div>
     </header>
+
+    <div class="mobile-drawer-backdrop" id="mobile-drawer-backdrop"></div>
+    <aside class="mobile-drawer" id="mobile-drawer">
+      <div class="mobile-drawer-header">
+        <strong>メニュー</strong>
+        <button class="mobile-drawer-close" id="mobile-drawer-close">×</button>
+      </div>
+      <div class="mobile-drawer-body" id="mobile-drawer-body"></div>
+    </aside>
+
+    <div id="modal-overlay" class="modal-overlay hidden">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <h2 id="modal-title"></h2>
+          <button class="modal-close" id="modal-close">×</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+      </div>
+    </div>
 
     <div class="mobile-stage" id="mobile-stage">
       <section class="metaverse" id="metaverse-host"></section>
@@ -1077,6 +1097,13 @@ function initMobile() {
   startClock();
   bindMobileJoystick();
   bindMobileChatInput();
+  bindMobileDrawer();
+
+  // モーダルの閉じるボタン
+  document.getElementById('modal-close')?.addEventListener('click', closeModal);
+  document.getElementById('modal-overlay')?.addEventListener('click', e => {
+    if (e.target.id === 'modal-overlay') closeModal();
+  });
 }
 
 function bindMobileJoinOverlay() {
@@ -1156,6 +1183,62 @@ function bindMobileJoystick() {
     handle.style.transform = 'translate(0,0)';
     setMoveKeys(false, false, false, false);
   });
+}
+
+function bindMobileDrawer() {
+  const drawer   = document.getElementById('mobile-drawer');
+  const backdrop = document.getElementById('mobile-drawer-backdrop');
+  const body     = document.getElementById('mobile-drawer-body');
+
+  function openDrawer() {
+    const progress = state.roomProgress;
+    body.innerHTML = `
+      <h3 class="mobile-drawer-section">ルーム</h3>
+      <nav class="mobile-drawer-rooms">
+        ${rooms.map(r => {
+          const rp = progress[r.id] ?? { completed: 0, total: 0 };
+          return `<button class="mobile-room-btn ${state.activeRoom === r.id ? 'active' : ''}" data-room="${r.id}">
+            <span class="mobile-room-icon">${roomIcon(r.id)}</span>
+            <span class="mobile-room-label">${r.label}</span>
+            <span class="mobile-room-prog">${rp.completed}/${rp.total}</span>
+          </button>`;
+        }).join('')}
+      </nav>
+      <h3 class="mobile-drawer-section">サポートメニュー</h3>
+      <nav class="mobile-drawer-menu">
+        <button data-modal="tasks">📋 タスクボード</button>
+        <button data-modal="calendar">📅 イベントカレンダー</button>
+      </nav>
+      <div class="mobile-drawer-footer">
+        <button id="mobile-leave-btn" class="mobile-leave-btn">退室する</button>
+      </div>`;
+
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+
+    body.querySelectorAll('[data-room]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state = setRoom(state, btn.dataset.room);
+        teleportToRoom(btn.dataset.room);
+        closeDrawer();
+      });
+    });
+    body.querySelectorAll('[data-modal]').forEach(btn => {
+      btn.addEventListener('click', () => { closeDrawer(); openModal(btn.dataset.modal); });
+    });
+    document.getElementById('mobile-leave-btn')?.addEventListener('click', () => {
+      if (confirm('退室しますか？')) { leaveSession(); location.reload(); }
+    });
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    backdrop.classList.remove('open');
+  }
+
+  document.getElementById('mobile-menu-btn')?.addEventListener('click', openDrawer);
+  document.getElementById('mobile-drawer-close')?.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
 }
 
 function appendMobileChatMessage(author, body, isMine) {
