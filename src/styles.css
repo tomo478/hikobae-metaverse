@@ -1872,6 +1872,42 @@ button {
   .control-dock {
     grid-template-columns: 1fr;
   }
+
+  /* モーダル余白を縮小 */
+  .modal-panel {
+    width: calc(100vw - 20px);
+    max-height: calc(100vh - 40px);
+  }
+
+  /* カレンダー: 縦積みレイアウトに切り替え */
+  .cal-event {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+  }
+
+  .cal-date {
+    grid-column: 1 / -1;
+    white-space: normal;
+    word-break: keep-all;
+  }
+
+  .cal-event strong {
+    grid-column: 1;
+    white-space: normal;
+    word-break: break-all;
+  }
+
+  .cal-event em {
+    grid-row: 2;
+    grid-column: 1;
+    width: fit-content;
+  }
+
+  .event-actions {
+    grid-row: 1 / 3;
+    grid-column: 2;
+    align-self: center;
+  }
 }
 
 /* ══ Mobile layout ════════════════════════════════════════════════════════════ */
@@ -1883,7 +1919,6 @@ button {
   overflow: hidden;
   background: #0a1218;
   min-width: 0;
-  touch-action: none;
 }
 
 .mobile-header {
@@ -2070,6 +2105,10 @@ body:has(.mobile-app) {
   min-width: 0;
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+/* canvas だけスクロール禁止（ボタン等への影響を回避） */
+.mobile-stage canvas {
   touch-action: none;
 }
 
