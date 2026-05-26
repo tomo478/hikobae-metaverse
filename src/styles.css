@@ -1882,6 +1882,8 @@ button {
   height: 100vh;
   overflow: hidden;
   background: #0a1218;
+  min-width: 0;
+  touch-action: none;
 }
 
 .mobile-header {
@@ -2029,6 +2031,7 @@ button {
   color: #fff;
   padding: 0 14px;
   font-size: 14px;
+  touch-action: auto;
 }
 
 .mobile-chat-input-row input::placeholder {
@@ -2060,6 +2063,14 @@ button {
 
 .mobile-app .join-btn {
   margin-top: 4px;
+}
+
+/* モバイル時は body の min-width を解除してスクロールを完全防止 */
+body:has(.mobile-app) {
+  min-width: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
 }
 
 /* ── モバイル ドロワーサイドバー ────────────────────────────────────── */

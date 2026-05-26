@@ -831,18 +831,21 @@ function bindEvents(container) {
   container.addEventListener('touchstart', e => {
     if (e.target.closest('#mobile-joystick')) return;
     if (e.touches.length !== 1) return;
+    e.preventDefault();
     dragging = true; dragMoved = false;
     dragX = e.touches[0].clientX; dragY = e.touches[0].clientY;
-  }, { passive: true });
+  }, { passive: false });
   container.addEventListener('touchmove', e => {
+    if (e.target.closest('#mobile-joystick')) return;
     if (!dragging || e.touches.length !== 1) return;
+    e.preventDefault();
     const dx = e.touches[0].clientX - dragX;
     const dy = e.touches[0].clientY - dragY;
     if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved = true;
     camYaw   -= dx * 0.006;
     camPitch  = Math.max(0.1, Math.min(1.2, camPitch + dy * 0.004));
     dragX = e.touches[0].clientX; dragY = e.touches[0].clientY;
-  }, { passive: true });
+  }, { passive: false });
   container.addEventListener('touchend', () => { dragging = false; });
 
   container.addEventListener('click', e => {
