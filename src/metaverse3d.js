@@ -22,10 +22,10 @@ const ROOMS = {
 };
 
 const SPAWNS = {
-  lobby:        { x:  0,  z:  8 },
-  learning:     { x: 62,  z:  0 },
-  workshop:     { x:-62,  z:  0 },
-  consultation: { x:  0,  z:-62 },
+  lobby:        { x:  0,  z: -2 },  // 受付デスクとソファの間の通路
+  learning:     { x: 57,  z:  0 },  // 西側入口付近（机から6ユニット離れる）
+  workshop:     { x:-57,  z:  0 },  // 東側入口付近
+  consultation: { x:  0,  z:-63 },  // 南側入口付近
 };
 
 const ROOM_DOORS = {
@@ -472,25 +472,25 @@ function addFurniture(id, r) {
 
 // ── GLB 家具の配置 ─────────────────────────────────────────────────────────────
 
-function placeFurnitureGLB(url, placements, scale = 1.0) {
+function placeFurnitureGLB(url, placements, scale = 1.0, yOffset = 0) {
   const loader = new GLTFLoader();
   loader.setMeshoptDecoder(MeshoptDecoder);
   loader.load(url, gltf => {
     const template = gltf.scene;
 
-    // バウンディングボックスで中心合わせ＋床面に揃える
+    // スケール適用後に床へ揃えるため、オフセットにscaleを掛ける
     const box = new THREE.Box3().setFromObject(template);
     template.position.set(
-      -(box.min.x + box.max.x) / 2,
-      -box.min.y,
-      -(box.min.z + box.max.z) / 2
+      -(box.min.x + box.max.x) / 2 * scale,
+      -box.min.y * scale,
+      -(box.min.z + box.max.z) / 2 * scale
     );
     template.scale.setScalar(scale);
     template.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
 
     placements.forEach(([px, pz, rotY = 0]) => {
       const wrapper = new THREE.Group();
-      wrapper.position.set(px, 0, pz);
+      wrapper.position.set(px, yOffset, pz);
       wrapper.rotation.y = rotY;
       wrapper.add(template.clone(true));
       scene.add(wrapper);
