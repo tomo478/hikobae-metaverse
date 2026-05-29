@@ -501,11 +501,11 @@ function placeFurnitureGLB(url, placements, scale = 1.0) {
 function loadFurnitureGLBs() {
   const R = ROOMS;
 
-  // ロビー: ソファ 3個
+  // ロビー: ソファ 3個（中央寄り）
   placeFurnitureGLB('./assets/furniture_lobby.glb', [
-    [R.lobby.x - 7, R.lobby.z + 5, 0],
-    [R.lobby.x + 7, R.lobby.z + 5, Math.PI],
-    [R.lobby.x,     R.lobby.z + 9, 0],
+    [R.lobby.x - 3, R.lobby.z + 5, 0],
+    [R.lobby.x + 3, R.lobby.z + 5, Math.PI],
+    [R.lobby.x,     R.lobby.z + 8, 0],
   ], 2.0);
 
   // 学習室: 机＋椅子 3×3 = 9個
@@ -524,16 +524,14 @@ function loadFurnitureGLBs() {
     [wr.x, wr.z - 10, 0],
     [wr.x, wr.z,       0],
     [wr.x, wr.z + 10,  0],
-  ], 4.0);
+  ], 3.0);
 
-  // 相談室: ソファ 4個 (2ペア向かい合わせ)
+  // 相談室: ソファ 2個 (向かい合わせ)
   const cr = R.consultation;
   placeFurnitureGLB('./assets/furniture_consultation.glb', [
-    [cr.x - 6, cr.z - 2,  Math.PI * 0.5],
-    [cr.x + 6, cr.z - 2, -Math.PI * 0.5],
-    [cr.x - 6, cr.z + 6,  Math.PI * 0.5],
-    [cr.x + 6, cr.z + 6, -Math.PI * 0.5],
-  ], 4.0);
+    [cr.x - 6, cr.z + 2,  Math.PI * 0.5],
+    [cr.x + 6, cr.z + 2, -Math.PI * 0.5],
+  ], 5.0);
 }
 
 function addBox(x, y, z, w, h, d, color, extra = {}) {
