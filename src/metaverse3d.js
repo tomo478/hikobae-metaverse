@@ -518,13 +518,16 @@ function loadFurnitureGLBs() {
   }
   placeFurnitureGLB('./assets/furniture_learning.glb', learningPlacements, 1.0);
 
-  // 作業室: 机 3個
+  // 作業室: 机 2列×3行 = 6個
   const wr = R.workshop;
   placeFurnitureGLB('./assets/furniture_workshop.glb', [
-    [wr.x, wr.z - 10, 0],
-    [wr.x, wr.z,       0],
-    [wr.x, wr.z + 10,  0],
-  ], 3.0);
+    [wr.x - 5, wr.z - 11, 0],
+    [wr.x + 5, wr.z - 11, 0],
+    [wr.x - 5, wr.z,       0],
+    [wr.x + 5, wr.z,       0],
+    [wr.x - 5, wr.z + 11,  0],
+    [wr.x + 5, wr.z + 11,  0],
+  ], 2.0);
 
   // 相談室: ソファ 2個 (向かい合わせ)
   const cr = R.consultation;
