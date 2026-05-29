@@ -6,7 +6,11 @@ import { RenderPass }                 from 'three/addons/postprocessing/RenderPa
 import { UnrealBloomPass }            from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass }                 from 'three/addons/postprocessing/OutputPass.js';
 import { GLTFLoader }                 from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder }             from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as skeletonClone }     from 'three/addons/utils/SkeletonUtils.js';
+
+// meshopt圧縮GLBのデコーダーを初期化
+await MeshoptDecoder.ready;
 
 // ── Room config ───────────────────────────────────────────────────────────────
 
@@ -470,6 +474,7 @@ function addFurniture(id, r) {
 
 function placeFurnitureGLB(url, placements, scale = 1.0) {
   const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
   loader.load(url, gltf => {
     const template = gltf.scene;
 
@@ -976,6 +981,7 @@ function hideLoadingOverlay() {
 
 export function startAvatarLoad() {
   const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
   showLoadingOverlay();
 
   function processGLTF(i, gltf) {
