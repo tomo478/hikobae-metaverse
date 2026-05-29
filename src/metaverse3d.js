@@ -503,9 +503,9 @@ function loadFurnitureGLBs() {
 
   // ロビー: ソファ 3個（中央寄り）
   placeFurnitureGLB('./assets/furniture_lobby.glb', [
-    [R.lobby.x - 3, R.lobby.z + 5, 0],
-    [R.lobby.x + 3, R.lobby.z + 5, Math.PI],
-    [R.lobby.x,     R.lobby.z + 8, 0],
+    [R.lobby.x - 1, R.lobby.z + 4, 0],
+    [R.lobby.x + 1, R.lobby.z + 4, Math.PI],
+    [R.lobby.x,     R.lobby.z + 6, 0],
   ], 2.0);
 
   // 学習室: 机＋椅子 3×3 = 9個
