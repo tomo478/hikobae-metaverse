@@ -234,6 +234,9 @@ function buildWorld() {
 
   // Outdoor environment
   buildOutdoor();
+
+  // GLB 家具
+  loadFurnitureGLBs();
 }
 
 function buildCorridor(x1, z1, x2, z2, width, color) {
@@ -439,35 +442,93 @@ function addFurniture(id, r) {
     case 'lobby':
       addReceptionDesk(x, z - 5);
       [[-10, 8], [10, 8], [-10, -8], [10, -8]].forEach(([dx, dz]) => addPlant(x + dx, z + dz));
-      addSofa(x - 6, z + 6, 0);
-      addSofa(x + 6, z + 6, Math.PI);
-      addRoundTable(x, z + 2);
       break;
     case 'learning':
+      // ライブモニターのみ残す（机・椅子はGLBで置き換え）
       for (let row = 0; row < 3; row++) {
         for (let col = 0; col < 3; col++) {
           const dx = x - 7 + col * 7, dz = z - 9 + row * 9;
-          addDesk(dx, dz);
           addLiveMonitor(dx, dz - 1.4, 'learning');
-          addChair(dx, dz + 1.5, 0);
         }
       }
       addPlant(x + 12, z - 17);
       addPlant(x - 12, z - 17);
       break;
     case 'workshop':
-      for (let i = 0; i < 3; i++) addWorkTable(x, z - 10 + i * 10, i);
+      // ライブモニターのみ残す
+      addLiveMonitor(x - 2.5, z - 0.5, 'workshop');
       [[-12, -17], [12, -17]].forEach(([dx, dz]) => addPlant(x + dx, z + dz));
       break;
     case 'consultation':
-      addRoundTable(x - 6, z - 2);
-      addRoundTable(x + 6, z - 2);
-      addSofa(x - 6, z - 6, Math.PI * 0.5);
-      addSofa(x + 6, z - 6, -Math.PI * 0.5);
       addDivider(x, z - 7, 12);
       [[-12, 8], [12, 8]].forEach(([dx, dz]) => addPlant(x + dx, z + dz));
       break;
   }
+}
+
+// ── GLB 家具の配置 ─────────────────────────────────────────────────────────────
+
+function placeFurnitureGLB(url, placements, scale = 1.0) {
+  const loader = new GLTFLoader();
+  loader.load(url, gltf => {
+    const template = gltf.scene;
+
+    // バウンディングボックスで中心合わせ＋床面に揃える
+    const box = new THREE.Box3().setFromObject(template);
+    template.position.set(
+      -(box.min.x + box.max.x) / 2,
+      -box.min.y,
+      -(box.min.z + box.max.z) / 2
+    );
+    template.scale.setScalar(scale);
+    template.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+
+    placements.forEach(([px, pz, rotY = 0]) => {
+      const wrapper = new THREE.Group();
+      wrapper.position.set(px, 0, pz);
+      wrapper.rotation.y = rotY;
+      wrapper.add(template.clone(true));
+      scene.add(wrapper);
+    });
+  }, undefined, err => console.warn('[furniture GLB]', url, err?.message ?? err));
+}
+
+function loadFurnitureGLBs() {
+  const R = ROOMS;
+
+  // ロビー: ソファ 3個
+  placeFurnitureGLB('./assets/furniture_lobby.glb', [
+    [R.lobby.x - 7, R.lobby.z + 5, 0],
+    [R.lobby.x + 7, R.lobby.z + 5, Math.PI],
+    [R.lobby.x,     R.lobby.z + 9, 0],
+  ], 1.0);
+
+  // 学習室: 机＋椅子 3×3 = 9個
+  const lr = R.learning;
+  const learningPlacements = [];
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      learningPlacements.push([lr.x - 7 + col * 7, lr.z - 9 + row * 9, 0]);
+    }
+  }
+  placeFurnitureGLB('./assets/furniture_learning.glb', learningPlacements, 1.0);
+
+  // 作業室: 机 3個
+  const wr = R.workshop;
+  placeFurnitureGLB('./assets/furniture_workshop.glb', [
+    [wr.x, wr.z - 10, 0],
+    [wr.x, wr.z,       0],
+    [wr.x, wr.z + 10,  0],
+  ], 1.0);
+
+  // 相談室: ソファ 4個 (2ペア向かい合わせ)
+  const cr = R.consultation;
+  placeFurnitureGLB('./assets/furniture_consultation.glb', [
+    [cr.x - 6, cr.z - 2,  Math.PI * 0.5],
+    [cr.x + 6, cr.z - 2, -Math.PI * 0.5],
+    [cr.x - 6, cr.z + 6,  Math.PI * 0.5],
+    [cr.x + 6, cr.z + 6, -Math.PI * 0.5],
+  ], 1.0);
 }
 
 function addBox(x, y, z, w, h, d, color, extra = {}) {
