@@ -559,6 +559,17 @@ function loadFurnitureGLBs() {
     [cr.x - 12, cr.z + 8, 0],
     [cr.x + 12, cr.z + 8, Math.PI],
   ], 1.0);
+
+  // ── 屋外ランドマーク ──────────────────────────────────────────────────────
+  // 高知城: ロビー北側の広場
+  placeFurnitureGLB('./assets/landmark_castle.glb', [
+    [0, 110, 0],
+  ], 8.0);
+
+  // はりまや橋: 作業室の西側
+  placeFurnitureGLB('./assets/landmark_bridge.glb', [
+    [-140, 0, 0],
+  ], 8.0);
 }
 
 function addBox(x, y, z, w, h, d, color, extra = {}) {
