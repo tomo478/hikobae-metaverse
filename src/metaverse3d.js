@@ -445,27 +445,22 @@ function addFurniture(id, r) {
   switch (id) {
     case 'lobby':
       addReceptionDesk(x, z - 5);
-      [[-10, 8], [10, 8], [-10, -8], [10, -8]].forEach(([dx, dz]) => addPlant(x + dx, z + dz));
       break;
     case 'learning':
-      // ライブモニターのみ残す（机・椅子はGLBで置き換え）
+      // ライブモニターのみ残す（机・椅子・植栽はGLBで置き換え）
       for (let row = 0; row < 3; row++) {
         for (let col = 0; col < 3; col++) {
           const dx = x - 7 + col * 7, dz = z - 9 + row * 9;
           addLiveMonitor(dx, dz - 1.4, 'learning');
         }
       }
-      addPlant(x + 12, z - 17);
-      addPlant(x - 12, z - 17);
       break;
     case 'workshop':
       // ライブモニターのみ残す
       addLiveMonitor(x - 2.5, z - 0.5, 'workshop');
-      [[-12, -17], [12, -17]].forEach(([dx, dz]) => addPlant(x + dx, z + dz));
       break;
     case 'consultation':
       addDivider(x, z - 7, 12);
-      [[-12, 8], [12, 8]].forEach(([dx, dz]) => addPlant(x + dx, z + dz));
       break;
   }
 }
@@ -535,6 +530,35 @@ function loadFurnitureGLBs() {
     [cr.x - 6, cr.z + 2,  Math.PI * 0.5],
     [cr.x + 6, cr.z + 2, -Math.PI * 0.5],
   ], 5.0);
+
+  // ── 植栽 GLB ──────────────────────────────────────────────────────────────
+  // ロビー四隅: パーム2本 + オーキッド2本
+  placeFurnitureGLB('./assets/plant_palm.glb', [
+    [R.lobby.x - 10, R.lobby.z + 8,  0],
+    [R.lobby.x + 10, R.lobby.z + 8,  Math.PI],
+  ], 1.0);
+  placeFurnitureGLB('./assets/plant_orchid.glb', [
+    [R.lobby.x - 10, R.lobby.z - 8,  0],
+    [R.lobby.x + 10, R.lobby.z - 8,  Math.PI],
+  ], 1.0);
+
+  // 学習室: 盆栽2個
+  placeFurnitureGLB('./assets/plant_bonsai.glb', [
+    [lr.x + 12, lr.z - 17, 0],
+    [lr.x - 12, lr.z - 17, Math.PI],
+  ], 1.0);
+
+  // 作業室: オーキッド2個
+  placeFurnitureGLB('./assets/plant_orchid.glb', [
+    [wr.x - 12, wr.z - 17, 0],
+    [wr.x + 12, wr.z - 17, Math.PI],
+  ], 1.0);
+
+  // 相談室: 盆栽2個
+  placeFurnitureGLB('./assets/plant_bonsai.glb', [
+    [cr.x - 12, cr.z + 8, 0],
+    [cr.x + 12, cr.z + 8, Math.PI],
+  ], 1.0);
 }
 
 function addBox(x, y, z, w, h, d, color, extra = {}) {
