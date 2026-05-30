@@ -566,9 +566,9 @@ function loadFurnitureGLBs() {
     [0, 80, 0],
   ], 15.0);
 
-  // はりまや橋: 作業室と相談室の中間外側
+  // はりまや橋: 相談室と学習室の中間外側
   placeFurnitureGLB('./assets/landmark_bridge.glb', [
-    [-90, -55, 0],
+    [80, -55, 0],
   ], 15.0);
 }
 
