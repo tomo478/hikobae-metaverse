@@ -1004,7 +1004,7 @@ function showLoadingOverlay() {
   _loadingEl.innerHTML = `
     <div class="av-loading-inner">
       <div class="av-spinner"></div>
-      <p>アバター読み込み中...</p>
+      <p>ワールド読み込み中...</p>
     </div>`;
   renderer.domElement.parentElement.appendChild(_loadingEl);
 }
